@@ -55,6 +55,9 @@ if [[ $(7z l $romzip | grep system.new.dat) ]]; then
 	echo "Aonly OTA detected"
     for partition in $PARTITIONS; do
 	    7z e $romzip $partition.new.dat* $partition.transfer.list
+        cat $partition.new.dat.{0..999} 2>/dev/null >> $partition.new.dat
+        cat $partition.new.dat.br.{0..999} 2>/dev/null >> $partition.new.dat
+        rm -rf $partition.new.dat.{0..999} $partition.new.dat.br.{0..999}
     done
 	ls | grep "\.new\.dat" | while read i; do
 		line=$(echo "$i" | cut -d"." -f1)
