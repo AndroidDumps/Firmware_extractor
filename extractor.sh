@@ -200,17 +200,16 @@ elif [[ $(7z l $romzip | grep "image.*.zip") ]]; then
     thezipfile=`echo $thezip | rev | cut -d "/" -f 1 | rev`
     mv $thezipfile temp.zip
     "$LOCALDIR/extractor.sh" temp.zip "$outdir"
-    rm temp.zip
     exit
 fi
 
 for partition in $PARTITIONS; do
     $simg2img $partition.img "$outdir"/$partition.img 2>/dev/null
-    if [[ ! -s "$outdir"/$partition.img ]]; then
+    if [[ ! -s "$outdir"/$partition.img ]] && [ -f $partition.img ]; then
         mv $partition.img "$outdir"/$partition.img
     fi
 
-    if [[ $EXT4PARTITIONS =~ (^|[[:space:]])"$partition"($|[[:space:]]) ]]; then
+    if [[ $EXT4PARTITIONS =~ (^|[[:space:]])"$partition"($|[[:space:]]) ]] && [ -f $partition.img ]; then
         offset=$(LANG=C grep -aobP -m1 '\x53\xEF' "$outdir"/$partition.img | head -1 | gawk '{print $1 - 1080}')
         if [ ! $offset == "0" ]; then
             echo "Header detected on $partition"
