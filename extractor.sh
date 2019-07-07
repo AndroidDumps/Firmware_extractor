@@ -196,7 +196,7 @@ elif [[ $(7z l $romzip | grep "image.*.zip") ]]; then
     7z e $romzip $thezip
     thezipfile=`echo $thezip | rev | cut -d "/" -f 1 | rev`
     mv $thezipfile temp.zip
-    "$LOCALDIR/extractor.sh" temp.zip
+    "$LOCALDIR/extractor.sh" temp.zip "$outdir"
     rm temp.zip
     exit
 fi
