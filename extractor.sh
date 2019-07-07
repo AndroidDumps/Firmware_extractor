@@ -32,7 +32,7 @@ sdat2img="$toolsdir/sdat2img.py"
 fixmoto="$toolsdir/fixmoto.py"
 
 romzip="$(realpath $1)"
-PARTITIONS="system vendor cust odm oem dtbo modem dtbo boot"
+PARTITIONS="system vendor cust odm oem modem dtbo boot"
 EXT4PARTITIONS="system vendor cust odm oem"
 
 echo "Create Temp and out dir"
