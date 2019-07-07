@@ -31,7 +31,7 @@ payload_extractor="$toolsdir/update_payload_extractor/extract.py"
 sdat2img="$toolsdir/sdat2img.py"
 fixmoto="$toolsdir/fixmoto.py"
 
-romzip=$1
+romzip="$(realpath $1)"
 PARTITIONS="system vendor cust odm oem dtbo modem dtbo boot"
 EXT4PARTITIONS="system vendor cust odm oem"
 
@@ -39,7 +39,7 @@ echo "Create Temp and out dir"
 tmpdir="$LOCALDIR/tmp"
 outdir="$LOCALDIR/out"
 if [ ! "$2" == "" ]; then
-    outdir="$2"
+    outdir="$(realpath $2)"
 fi
 mkdir -p "$tmpdir"
 mkdir -p "$outdir"
@@ -196,7 +196,7 @@ elif [[ $(7z l $romzip | grep "image.*.zip") ]]; then
     7z e $romzip $thezip
     thezipfile=`echo $thezip | rev | cut -d "/" -f 1 | rev`
     mv $thezipfile temp.zip
-    "$0" temp.zip
+    "$LOCALDIR/extractor.sh" temp.zip
     rm temp.zip
     exit
 fi
