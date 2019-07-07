@@ -77,6 +77,9 @@ if [[ $(7z l $romzip | grep system.new.dat) ]]; then
     cd "$outdir"
     for partition in $PARTITIONS; do
         7z e $romzip $partition.img
+        if [ ! -s $partition.img ]; then
+            rm $partition.img
+        fi
     done
     exit
 elif [[ $(7z l $romzip | grep "system_new.img\|system.img$") ]]; then
@@ -216,6 +219,10 @@ for partition in $PARTITIONS; do
             dd if="$outdir"/$partition.img of="$outdir"/$partition.img-2 ibs=$offset skip=1 2>/dev/null
             mv "$outdir"/$partition.img-2 "$outdir"/$partition.img
         fi
+    fi
+
+    if [ ! -s "$outdir"/$partition.img ]; then
+        rm "$outdir"/$partition.img
     fi
 done
 
