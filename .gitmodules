@@ -1,0 +1,3 @@
+[submodule "tools/update_payload_extractor"]
+	path = tools/update_payload_extractor
+	url = https://github.com/gmrt/update_payload_extractor.git
