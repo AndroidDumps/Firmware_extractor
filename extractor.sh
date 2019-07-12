@@ -170,18 +170,13 @@ elif [[ $(7z l $romzip | grep chunk | grep -v ".*\.so$") ]]; then
 	exit
 elif [[ $(7z l $romzip | grep rawprogram) ]]; then
 	echo "QFIL detected (FIXME: This can only extract system properly)"
-	#FIXME: packsparseimg is shit and can only extract system
 	rawprograms=$(7z l $romzip | gawk '{ print $6 }' | grep rawprogram)
 	7z e $romzip $rawprograms
 	for partition in $PARTITIONS; do
 		partitionsonzip=$(7z l $romzip | gawk '{ print $6 }' | grep $partition)
 		7z e $romzip $partitionsonzip
-		if [ -f rawprogram_unsparse.xml ]; then
-			$packsparseimg
-		else
-			rawprogramsfile=$(grep -rlw system rawprogram*)
-			$packsparseimg -x $rawprogramsfile
-		fi
+		rawprogramsfile=$(grep -rlw $partition rawprogram*)
+		$packsparseimg -t $partition -x $rawprogramsfile
 		mv "$partition.raw" "$partition.img"
 	done
 elif [[ $(7z l $romzip | grep payload.bin) ]]; then
