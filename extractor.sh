@@ -33,7 +33,7 @@ romzip="$(realpath $1)"
 PARTITIONS="system vendor cust odm oem modem dtbo boot"
 EXT4PARTITIONS="system vendor cust odm oem"
 
-if [[ ! $(7z l $romzip | grep ".*system.ext4.tar.*\|.*tar.md5\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|.*system_.*" | grep -v ".*chunk.*\.so$") ]]; then
+if [[ ! $(7z l $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|.*system_.*" | grep -v ".*chunk.*\.so$") ]]; then
 	echo "BRUH: This type of firmwares not supported"
 	exit 1
 fi
@@ -86,34 +86,24 @@ if [[ $(7z l $romzip | grep system.new.dat) ]]; then
 elif [[ $(7z l $romzip | grep "system_new.img\|system.img$") ]]; then
 	echo "Image detected"
 	for partition in $PARTITIONS; do
-		7z e $romzip $partition_new.img $partition.img 2>/dev/null >> $tmpdir/zip.log
+		7z e $romzip $partition_new.img $partition.img */$partition.img */$partition_new.img 2>/dev/null >> $tmpdir/zip.log
 		if [[ -f $partition_new.img ]]; then
 			mv $partition_new.img $partition.img
 		fi
 	done
 	romzip=""
-elif [[ $(7z l $romzip | grep tar.md5) && ! $(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_) ]]; then
-	tarmd5=$(7z l $romzip | grep tar.md5 | gawk '{ print $6 }')
-	echo "non AP tarmd5 detected"
-	7z e $romzip $tarmd5 2>/dev/null >> $tmpdir/zip.log
+elif [[ $(7z l $romzip | grep .tar) && ! $(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_) ]]; then
+	tar=$(7z l $romzip | grep .tar | gawk '{ print $6 }')
+	echo "non AP tar detected"
+	7z e $romzip $tar 2>/dev/null >> $tmpdir/zip.log
 	echo "Extracting images..."
 	for partition in $PARTITIONS; do
-		if [[ $(tar -tf $tarmd5 | grep $partition.img.ext4) ]]; then
-			tar -xf $tarmd5 $partition.img.ext4
+        7z e $tar $partition.img.ext4 $partition.img */$partition.img 2>/dev/null >> $tmpdir/zip.log
+		if [[ -f $partition.img.ext4 ]]; then
 			mv $partition.img.ext4 $partition.img
-		elif [[ $(tar -tf $tarmd5 | grep $partition.img) ]]; then
-			tar -xf $tarmd5 $partition.img
 		fi
 	done
-	if [[ -f system.img ]]; then
-		rm -rf $tarmd5
-	else
-		echo "y u bully me!"
-		cd "$LOCALDIR"
-		rm -rf "$tmpdir"
-		exit 1
-	fi
-	romzip=""
+    rm -rf $tar
 elif [[ $(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_) ]]; then
 	echo "AP tarmd5 detected"
 	mainmd5=$(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_)
@@ -151,7 +141,7 @@ elif [[ $(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_) ]]; then
 elif [[ $(7z l $romzip | grep chunk | grep -v ".*\.so$") ]]; then
 	echo "chunk detected"
 	for partition in $PARTITIONS; do
-		7z e $romzip *$partition*chunk* */*$partition*chunk* $partition.img 2>/dev/null >> $tmpdir/zip.log
+		7z e $romzip *$partition*chunk* */*$partition*chunk* $partition.img */$partition.img 2>/dev/null >> $tmpdir/zip.log
 		rm -f *"$partition"_b*
 		romchunk=$(ls | grep chunk | grep $partition | sort)
 		if [[ $(echo "$romchunk" | grep "sparsechunk") ]]; then
