@@ -8,6 +8,7 @@
 # QFIL
 # AB OTA
 # Image zip
+# ozip
 
 usage() {
 	echo "Usage: $0 <Path to firmware> [Output Dir]"
@@ -28,15 +29,11 @@ simg2img="$toolsdir/$HOST/bin/simg2img"
 packsparseimg="$toolsdir/$HOST/bin/packsparseimg"
 payload_extractor="$toolsdir/update_payload_extractor/extract.py"
 sdat2img="$toolsdir/sdat2img.py"
+ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 
 romzip="$(realpath $1)"
 PARTITIONS="system vendor cust odm oem modem dtbo boot"
 EXT4PARTITIONS="system vendor cust odm oem"
-
-if [[ ! $(7z l $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|.*system_.*" | grep -v ".*chunk.*\.so$") ]]; then
-	echo "BRUH: This type of firmwares not supported"
-	exit 1
-fi
 
 echo "Create Temp and out dir"
 outdir="$LOCALDIR/out"
@@ -46,9 +43,25 @@ fi
 tmpdir="$outdir/tmp"
 mkdir -p "$tmpdir"
 mkdir -p "$outdir"
+cd $tmpdir
+
+MAGIC=$(head -c12 $romzip | tr -d '\0')
+if [[ $MAGIC == "OPPOENCRYPT!" ]]; then
+    echo "ozip detected"
+    cp $romzip "$tmpdir/temp.ozip"
+    python $ozipdecrypt "$tmpdir/temp.ozip"
+    "$LOCALDIR/extractor.sh" "$tmpdir/temp.zip" "$outdir"
+    exit
+fi
+
+if [[ ! $(7z l $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|.*system_.*" | grep -v ".*chunk.*\.so$") ]]; then
+	echo "BRUH: This type of firmwares not supported"
+    cd "$LOCALDIR"
+    rm -rf "$tmpdir" "$outdir"
+	exit 1
+fi
 
 echo "Extracting firmware on: $outdir"
-cd $tmpdir
 
 if [[ $(7z l $romzip | grep NON-HLOS) ]]; then
     echo "NON-HLOS modem detected"
@@ -64,9 +77,10 @@ if [[ $(7z l $romzip | grep system.new.dat) ]]; then
 	echo "Aonly OTA detected"
 	for partition in $PARTITIONS; do
 		7z e $romzip $partition.new.dat* $partition.transfer.list $partition.img 2>/dev/null >> $tmpdir/zip.log
-		cat $partition.new.dat.{0..999} 2>/dev/null >> $partition.new.dat
-		cat $partition.new.dat.br.{0..999} 2>/dev/null >> $partition.new.dat
-		rm -rf $partition.new.dat.{0..999} $partition.new.dat.br.{0..999}
+        if [[ -f $partition.new.dat.1 ]]; then
+		    cat $partition.new.dat.{0..999} 2>/dev/null >> $partition.new.dat
+		    rm -rf $partition.new.dat.{0..999}
+        fi
 	    ls | grep "\.new\.dat" | while read i; do
 		    line=$(echo "$i" | cut -d"." -f1)
 		    if [[ $(echo "$i" | grep "\.dat\.xz") ]]; then
@@ -80,7 +94,7 @@ if [[ $(7z l $romzip | grep system.new.dat) ]]; then
 		    fi
 		    echo "Extracting $partition"
 		    python3 $sdat2img $line.transfer.list $line.new.dat "$outdir"/$line.img > $tmpdir/extract.log
-		    rm -rf $line.transfer.list $line.new.dat
+            rm -rf $line.transfer.list $line.new.dat
 	    done
     done
 elif [[ $(7z l $romzip | grep "system_new.img\|system.img$") ]]; then

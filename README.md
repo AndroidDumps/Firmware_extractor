@@ -6,12 +6,12 @@
 ### Linux
 ```
 apt install liblzma-dev python-pip brotli lz4
-pip install backports.lzma protobuf
+pip install backports.lzma protobuf pycrypto
 ```
 ### Mac
 ```
 brew install protobuf liblzma-dev brotli lz4
-pip install backports.lzma protobuf
+pip install backports.lzma protobuf pycrypto
 ```
 
 ## How to use
