@@ -62,34 +62,26 @@ fi
 if [[ $(7z l $romzip | grep system.new.dat) ]]; then
 	echo "Aonly OTA detected"
 	for partition in $PARTITIONS; do
-		7z e $romzip $partition.new.dat* $partition.transfer.list
+		7z e $romzip $partition.new.dat* $partition.transfer.list $partition.img
 		cat $partition.new.dat.{0..999} 2>/dev/null >> $partition.new.dat
 		cat $partition.new.dat.br.{0..999} 2>/dev/null >> $partition.new.dat
 		rm -rf $partition.new.dat.{0..999} $partition.new.dat.br.{0..999}
-	done
-	ls | grep "\.new\.dat" | while read i; do
-		line=$(echo "$i" | cut -d"." -f1)
-		if [[ $(echo "$i" | grep "\.dat\.xz") ]]; then
-			7z e "$i"
-			rm -rf "$i"
-		fi
-		if [[ $(echo "$i" | grep "\.dat\.br") ]]; then
-			echo "$bluet$t_extract_convert_br$normal"
-			brotli -d "$i"
-			rm -f "$i"
-		fi
-		echo "Extracting $partition"
-		python3 $sdat2img $line.transfer.list $line.new.dat "$outdir"/$line.img
-		rm -rf $line.transfer.list $line.new.dat
-	done
-	cd "$outdir"
-	for partition in $PARTITIONS; do
-		7z e $romzip $partition.img
-		if [ ! -s $partition.img ]; then
-			rm $partition.img
-		fi
-	done
-	exit
+	    ls | grep "\.new\.dat" | while read i; do
+		    line=$(echo "$i" | cut -d"." -f1)
+		    if [[ $(echo "$i" | grep "\.dat\.xz") ]]; then
+			    7z e "$i"
+			    rm -rf "$i"
+		    fi
+		    if [[ $(echo "$i" | grep "\.dat\.br") ]]; then
+			    echo "Converting brotli $partition dat to normal"
+			    brotli -d "$i"
+			    rm -f "$i"
+		    fi
+		    echo "Extracting $partition"
+		    python3 $sdat2img $line.transfer.list $line.new.dat "$outdir"/$line.img
+		    rm -rf $line.transfer.list $line.new.dat
+	    done
+    done
 elif [[ $(7z l $romzip | grep "system_new.img\|system.img$") ]]; then
 	echo "Image detected"
 	for partition in $PARTITIONS; do
@@ -203,7 +195,9 @@ elif [[ $(7z l $romzip | grep "image.*.zip") ]]; then
 fi
 
 for partition in $PARTITIONS; do
-	$simg2img $partition.img "$outdir"/$partition.img 2>/dev/null
+    if [ -f $partition.img ]; then
+	    $simg2img $partition.img "$outdir"/$partition.img 2>/dev/null
+    fi
 	if [[ ! -s "$outdir"/$partition.img ]] && [ -f $partition.img ]; then
 		mv $partition.img "$outdir"/$partition.img
 	fi
