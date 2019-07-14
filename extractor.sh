@@ -53,6 +53,10 @@ if [[ $(7z l $romzip | grep NON-HLOS) ]]; then
     echo "NON-HLOS modem detected"
     7z e $romzip NON-HLOS.bin */NON-HLOS.bin
     mv NON-HLOS.bin modem.img
+    $simg2img modem.img "$outdir"/modem.img 2>/dev/null
+    if [[ ! -s "$outdir"/modem.img ]] && [ -f modem.img ]; then
+        mv modem.img "$outdir"/modem.img
+    fi
 fi
 
 if [[ $(7z l $romzip | grep system.new.dat) ]]; then
