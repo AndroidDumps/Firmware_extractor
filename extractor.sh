@@ -168,10 +168,14 @@ elif [[ $(7z l $romzip | grep rawprogram) ]]; then
 	7z e $romzip $rawprograms
 	for partition in $PARTITIONS; do
 		partitionsonzip=$(7z l $romzip | gawk '{ print $6 }' | grep $partition)
-		7z e $romzip $partitionsonzip
-		rawprogramsfile=$(grep -rlw $partition rawprogram*)
-		$packsparseimg -t $partition -x $rawprogramsfile
-		mv "$partition.raw" "$partition.img"
+        if [[ ! $partitionsonzip == "" ]]; then
+		    7z e $romzip $partitionsonzip
+            if [[ ! -f "$partition.img" ]]; then
+		        rawprogramsfile=$(grep -rlw $partition rawprogram*)
+		        $packsparseimg -t $partition -x $rawprogramsfile
+		        mv "$partition.raw" "$partition.img"
+            fi
+        fi
 	done
 elif [[ $(7z l $romzip | grep payload.bin) ]]; then
 	echo "AB OTA detected"
