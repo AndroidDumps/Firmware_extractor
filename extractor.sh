@@ -33,21 +33,22 @@ romzip="$(realpath $1)"
 PARTITIONS="system vendor cust odm oem modem dtbo boot"
 EXT4PARTITIONS="system vendor cust odm oem"
 
-echo "Create Temp and out dir"
-tmpdir="$LOCALDIR/tmp"
-outdir="$LOCALDIR/out"
-if [ ! "$2" == "" ]; then
-	outdir="$(realpath $2)"
-fi
-mkdir -p "$tmpdir"
-mkdir -p "$outdir"
-
-cd $tmpdir
-
 if [[ ! $(7z l $romzip | grep ".*system.ext4.tar.*\|.*tar.md5\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|.*system_.*" | grep -v ".*chunk.*\.so$") ]]; then
 	echo "BRUH: This type of firmwares not supported"
 	exit 1
 fi
+
+echo "Create Temp and out dir"
+outdir="$LOCALDIR/out"
+if [ ! "$2" == "" ]; then
+    outdir="$(realpath $2)"
+fi
+tmpdir="$outdir/tmp"
+mkdir -p "$tmpdir"
+mkdir -p "$outdir"
+
+echo "Extracting firmware on: $outdir"
+cd $tmpdir
 
 if [[ $(7z l $romzip | grep NON-HLOS) ]]; then
     echo "NON-HLOS modem detected"
@@ -143,6 +144,7 @@ elif [[ $(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_) ]]; then
 		rm -rf $cscmd5
 	else
 		echo "Extract failed"
+        rm -rf "$tmpdir"
 		exit 1
 	fi
 	romzip=""
@@ -187,6 +189,7 @@ elif [[ $(7z l $romzip | grep payload.bin) ]]; then
 		fi
 	done
 	rm payload.bin
+    rm -rf "$tmpdir"
 	exit
 elif [[ $(7z l $romzip | grep "image.*.zip") ]]; then
 	echo "Image zip firmware detected"
