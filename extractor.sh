@@ -52,7 +52,7 @@ cd $tmpdir
 
 if [[ $(7z l $romzip | grep NON-HLOS) ]]; then
     echo "NON-HLOS modem detected"
-    7z e $romzip NON-HLOS.bin */NON-HLOS.bin
+    7z e $romzip NON-HLOS.bin */NON-HLOS.bin 2>/dev/null >> $tmpdir/zip.log
     mv NON-HLOS.bin modem.img
     $simg2img modem.img "$outdir"/modem.img 2>/dev/null
     if [[ ! -s "$outdir"/modem.img ]] && [ -f modem.img ]; then
@@ -63,14 +63,14 @@ fi
 if [[ $(7z l $romzip | grep system.new.dat) ]]; then
 	echo "Aonly OTA detected"
 	for partition in $PARTITIONS; do
-		7z e $romzip $partition.new.dat* $partition.transfer.list $partition.img
+		7z e $romzip $partition.new.dat* $partition.transfer.list $partition.img 2>/dev/null >> $tmpdir/zip.log
 		cat $partition.new.dat.{0..999} 2>/dev/null >> $partition.new.dat
 		cat $partition.new.dat.br.{0..999} 2>/dev/null >> $partition.new.dat
 		rm -rf $partition.new.dat.{0..999} $partition.new.dat.br.{0..999}
 	    ls | grep "\.new\.dat" | while read i; do
 		    line=$(echo "$i" | cut -d"." -f1)
 		    if [[ $(echo "$i" | grep "\.dat\.xz") ]]; then
-			    7z e "$i"
+			    7z e "$i" 2>/dev/null >> $tmpdir/zip.log
 			    rm -rf "$i"
 		    fi
 		    if [[ $(echo "$i" | grep "\.dat\.br") ]]; then
@@ -79,14 +79,14 @@ if [[ $(7z l $romzip | grep system.new.dat) ]]; then
 			    rm -f "$i"
 		    fi
 		    echo "Extracting $partition"
-		    python3 $sdat2img $line.transfer.list $line.new.dat "$outdir"/$line.img
+		    python3 $sdat2img $line.transfer.list $line.new.dat "$outdir"/$line.img > $tmpdir/extract.log
 		    rm -rf $line.transfer.list $line.new.dat
 	    done
     done
 elif [[ $(7z l $romzip | grep "system_new.img\|system.img$") ]]; then
 	echo "Image detected"
 	for partition in $PARTITIONS; do
-		7z e $romzip $partition_new.img $partition.img
+		7z e $romzip $partition_new.img $partition.img 2>/dev/null >> $tmpdir/zip.log
 		if [[ -f $partition_new.img ]]; then
 			mv $partition_new.img $partition.img
 		fi
@@ -95,7 +95,7 @@ elif [[ $(7z l $romzip | grep "system_new.img\|system.img$") ]]; then
 elif [[ $(7z l $romzip | grep tar.md5) && ! $(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_) ]]; then
 	tarmd5=$(7z l $romzip | grep tar.md5 | gawk '{ print $6 }')
 	echo "non AP tarmd5 detected"
-	7z e $romzip $tarmd5
+	7z e $romzip $tarmd5 2>/dev/null >> $tmpdir/zip.log
 	echo "Extracting images..."
 	for partition in $PARTITIONS; do
 		if [[ $(tar -tf $tarmd5 | grep $partition.img.ext4) ]]; then
@@ -119,7 +119,7 @@ elif [[ $(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_) ]]; then
 	mainmd5=$(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_)
 	cscmd5=$(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep CSC_)
 	echo "Extracting tarmd5"
-	7z e $romzip $mainmd5 $cscmd5
+	7z e $romzip $mainmd5 $cscmd5 2>/dev/null >> $tmpdir/zip.log
 	mainmd5=$(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_ | rev | cut -d "/" -f 1 | rev)
 	cscmd5=$(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep CSC_ | rev | cut -d "/" -f 1 | rev)
 	echo "Extracting images..."
@@ -151,11 +151,11 @@ elif [[ $(7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep AP_) ]]; then
 elif [[ $(7z l $romzip | grep chunk | grep -v ".*\.so$") ]]; then
 	echo "chunk detected"
 	for partition in $PARTITIONS; do
-		7z e $romzip *$partition*chunk* */*$partition*chunk* $partition.img
+		7z e $romzip *$partition*chunk* */*$partition*chunk* $partition.img 2>/dev/null >> $tmpdir/zip.log
 		rm -f *"$partition"_b*
 		romchunk=$(ls | grep chunk | grep $partition | sort)
 		if [[ $(echo "$romchunk" | grep "sparsechunk") ]]; then
-			$simg2img $(echo "$romchunk" | tr '\n' ' ') $partition.img.raw
+			$simg2img $(echo "$romchunk" | tr '\n' ' ') $partition.img.raw 2>/dev/null
 			rm -rf *$partition*chunk*
 			if [[ -f $partition.img ]]; then
 				rm -rf $partition.img.raw
@@ -167,23 +167,23 @@ elif [[ $(7z l $romzip | grep chunk | grep -v ".*\.so$") ]]; then
 elif [[ $(7z l $romzip | grep rawprogram) ]]; then
 	echo "QFIL detected"
 	rawprograms=$(7z l $romzip | gawk '{ print $6 }' | grep rawprogram)
-	7z e $romzip $rawprograms
+	7z e $romzip $rawprograms 2>/dev/null >> $tmpdir/zip.log
 	for partition in $PARTITIONS; do
 		partitionsonzip=$(7z l $romzip | gawk '{ print $6 }' | grep $partition)
         if [[ ! $partitionsonzip == "" ]]; then
-		    7z e $romzip $partitionsonzip
+		    7z e $romzip $partitionsonzip 2>/dev/null >> $tmpdir/zip.log
             if [[ ! -f "$partition.img" ]]; then
 		        rawprogramsfile=$(grep -rlw $partition rawprogram*)
-		        $packsparseimg -t $partition -x $rawprogramsfile
+		        $packsparseimg -t $partition -x $rawprogramsfile > $tmpdir/extract.log
 		        mv "$partition.raw" "$partition.img"
             fi
         fi
 	done
 elif [[ $(7z l $romzip | grep payload.bin) ]]; then
 	echo "AB OTA detected"
-	7z e $romzip payload.bin
+	7z e $romzip payload.bin 2>/dev/null >> $tmpdir/zip.log
 	for partition in $PARTITIONS; do
-		python $payload_extractor payload.bin --partitions $partition --output_dir $tmpdir
+		python $payload_extractor payload.bin --partitions $partition --output_dir $tmpdir > $tmpdir/extract.log
 		if [[ -f "$tmpdir/$partition" ]]; then
 			mv "$tmpdir/$partition" "$outdir/$partition.img"
 		fi
@@ -194,7 +194,7 @@ elif [[ $(7z l $romzip | grep payload.bin) ]]; then
 elif [[ $(7z l $romzip | grep "image.*.zip") ]]; then
 	echo "Image zip firmware detected"
 	thezip=$(7z l $romzip | grep "image.*.zip" | gawk '{ print $6 }')
-	7z e $romzip $thezip
+	7z e $romzip $thezip 2>/dev/null >> $tmpdir/zip.log
 	thezipfile=$(echo $thezip | rev | cut -d "/" -f 1 | rev)
 	mv $thezipfile temp.zip
 	"$LOCALDIR/extractor.sh" temp.zip "$outdir"
