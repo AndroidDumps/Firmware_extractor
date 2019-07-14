@@ -218,7 +218,7 @@ for partition in $PARTITIONS; do
 		fi
 	fi
 
-	if [ ! -s "$outdir"/$partition.img ]; then
+	if [ ! -s "$outdir"/$partition.img ] && [ -f "$outdir"/$partition.img ]; then
 		rm "$outdir"/$partition.img
 	fi
 done
