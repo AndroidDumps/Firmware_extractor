@@ -157,6 +157,7 @@ elif [[ $(7z l $romzip | grep chunk | grep -v ".*\.so$") ]]; then
 	for partition in $PARTITIONS; do
 		7z e $romzip *$partition*chunk* */*$partition*chunk* $partition.img */$partition.img 2>/dev/null >> $tmpdir/zip.log
 		rm -f *"$partition"_b*
+        rm -f *"$partition"_other*
 		romchunk=$(ls | grep chunk | grep $partition | sort)
 		if [[ $(echo "$romchunk" | grep "sparsechunk") ]]; then
 			$simg2img $(echo "$romchunk" | tr '\n' ' ') $partition.img.raw 2>/dev/null
