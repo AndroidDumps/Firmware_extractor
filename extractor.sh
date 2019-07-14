@@ -28,7 +28,6 @@ simg2img="$toolsdir/$HOST/bin/simg2img"
 packsparseimg="$toolsdir/$HOST/bin/packsparseimg"
 payload_extractor="$toolsdir/update_payload_extractor/extract.py"
 sdat2img="$toolsdir/sdat2img.py"
-fixmoto="$toolsdir/fixmoto.py"
 
 romzip="$(realpath $1)"
 PARTITIONS="system vendor cust odm oem modem dtbo boot"
@@ -48,6 +47,12 @@ cd $tmpdir
 if [[ ! $(7z l $romzip | grep ".*system.ext4.tar.*\|.*tar.md5\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|.*system_.*" | grep -v ".*chunk.*\.so$") ]]; then
 	echo "BRUH: This type of firmwares not supported"
 	exit 1
+fi
+
+if [[ $(7z l $romzip | grep NON-HLOS) ]]; then
+    echo "NON-HLOS modem detected"
+    7z e $romzip NON-HLOS.bin */NON-HLOS.bin
+    mv NON-HLOS.bin modem.img
 fi
 
 if [[ $(7z l $romzip | grep system.new.dat) ]]; then
@@ -149,27 +154,20 @@ elif [[ $(7z l $romzip | grep chunk | grep -v ".*\.so$") ]]; then
 	echo "chunk detected"
 	for partition in $PARTITIONS; do
 		7z e $romzip *$partition*chunk* */*$partition*chunk* $partition.img
-		rm -f *system_b*
-		romchunk=$(ls | grep chunk | sort)
+		rm -f *"$partition"_b*
+		romchunk=$(ls | grep chunk | grep $partition | sort)
 		if [[ $(echo "$romchunk" | grep "sparsechunk") ]]; then
 			$simg2img $(echo "$romchunk" | tr '\n' ' ') $partition.img.raw
-			rm -rf *chunk*
-			echo "Fix if moto images"
-			python3 $fixmoto $partition.img.raw $partition.img
+			rm -rf *$partition*chunk*
 			if [[ -f $partition.img ]]; then
 				rm -rf $partition.img.raw
 			else
 				mv $partition.img.raw $partition.img
 			fi
-		else
-			$simg2img *chunk* $partition.img
-			rm -rf *chunk*
 		fi
-		mv "$partition.img" "$outdir/$partition.img"
 	done
-	exit
 elif [[ $(7z l $romzip | grep rawprogram) ]]; then
-	echo "QFIL detected (FIXME: This can only extract system properly)"
+	echo "QFIL detected"
 	rawprograms=$(7z l $romzip | gawk '{ print $6 }' | grep rawprogram)
 	7z e $romzip $rawprograms
 	for partition in $PARTITIONS; do
@@ -206,8 +204,11 @@ for partition in $PARTITIONS; do
 		mv $partition.img "$outdir"/$partition.img
 	fi
 
-	if [[ $EXT4PARTITIONS =~ (^|[[:space:]])"$partition"($|[[:space:]]) ]] && [ -f $partition.img ]; then
+	if [[ $EXT4PARTITIONS =~ (^|[[:space:]])"$partition"($|[[:space:]]) ]] && [ -f "$outdir"/$partition.img ]; then
 		offset=$(LANG=C grep -aobP -m1 '\x53\xEF' "$outdir"/$partition.img | head -1 | gawk '{print $1 - 1080}')
+        if [[ "$offset" == 128055 ]]; then
+            offset=131072
+        fi
 		if [ ! $offset == "0" ]; then
 			echo "Header detected on $partition"
 			dd if="$outdir"/$partition.img of="$outdir"/$partition.img-2 ibs=$offset skip=1 2>/dev/null
