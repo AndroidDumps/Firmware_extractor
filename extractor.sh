@@ -216,6 +216,7 @@ for partition in $PARTITIONS; do
 
 	if [[ $EXT4PARTITIONS =~ (^|[[:space:]])"$partition"($|[[:space:]]) ]] && [ -f "$outdir"/$partition.img ]; then
 		offset=$(LANG=C grep -aobP -m1 '\x53\xEF' "$outdir"/$partition.img | head -1 | gawk '{print $1 - 1080}')
+        offset=0
         if [[ "$offset" == 128055 ]]; then
             offset=131072
         fi
