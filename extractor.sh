@@ -217,12 +217,12 @@ for partition in $PARTITIONS; do
     if [[ $EXT4PARTITIONS =~ (^|[[:space:]])"$partition"($|[[:space:]]) ]] && [ -f "$outdir"/$partition.img ]; then
         MAGIC=$(head -c12 "$outdir"/$partition.img | tr -d '\0')
         offset=$(LANG=C grep -aobP -m1 '\x53\xEF' "$outdir"/$partition.img | head -1 | gawk '{print $1 - 1080}')
-        if [[ $(echo "$MAGIC" | grep -v "moto") ]]; then
+        if [[ $(echo "$MAGIC" | grep "MOTO") ]]; then
             if [[ "$offset" == 128055 ]]; then
                 offset=131072
             fi
             echo "MOTO header detected on $partition in $offset"
-        elif [[ $(echo "$MAGIC" | grep -v "asus") ]]; then
+        elif [[ $(echo "$MAGIC" | grep "ASUS") ]]; then
             echo "ASUS header detected on $partition in $offset"
         else
             offset=0
