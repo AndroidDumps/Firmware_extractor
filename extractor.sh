@@ -34,7 +34,7 @@ ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 romzip="$(realpath $1)"
 PARTITIONS="system vendor cust odm oem modem dtbo boot tz"
 EXT4PARTITIONS="system vendor cust odm oem"
-OTHERPARTITIONS="tz.mbn:tz NON-HLOS:modem"
+OTHERPARTITIONS="tz.mbn:tz NON-HLOS:modem boot-verified.img:boot dtbo-verified.img:dtbo"
 
 echo "Create Temp and out dir"
 outdir="$LOCALDIR/out"
