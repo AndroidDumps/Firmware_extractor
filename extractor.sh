@@ -32,8 +32,9 @@ sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 
 romzip="$(realpath $1)"
-PARTITIONS="system vendor cust odm oem modem dtbo boot"
+PARTITIONS="system vendor cust odm oem modem dtbo boot tz"
 EXT4PARTITIONS="system vendor cust odm oem"
+OTHERPARTITIONS="tz.mbn:tz NON-HLOS:modem"
 
 echo "Create Temp and out dir"
 outdir="$LOCALDIR/out"
@@ -63,15 +64,22 @@ fi
 
 echo "Extracting firmware on: $outdir"
 
-if [[ $(7z l $romzip | grep NON-HLOS) ]]; then
-    echo "NON-HLOS modem detected"
-    7z e $romzip NON-HLOS.bin */NON-HLOS.bin 2>/dev/null >> $tmpdir/zip.log
-    mv NON-HLOS.bin modem.img
-    $simg2img modem.img "$outdir"/modem.img 2>/dev/null
-    if [[ ! -s "$outdir"/modem.img ]] && [ -f modem.img ]; then
-        mv modem.img "$outdir"/modem.img
+for otherpartition in $OTHERPARTITIONS; do
+    filename=$(echo $otherpartition | cut -f 1 -d ":")
+    outname=$(echo $otherpartition | cut -f 2 -d ":")
+    if [[ $(7z l $romzip | grep $filename) ]]; then
+        echo "$filename detected for $outname"
+        7z e $romzip *"$filename"* */*"$filename"* */*/*"$filename"* 2>/dev/null >> $tmpdir/zip.log
+        outputs=$(ls *"$filename"*)
+        for output in $outputs; do
+            mv $output "$outname".img
+            $simg2img "$outname".img "$outdir/$outname".img 2>/dev/null
+            if [[ ! -s "$outdir/$outname".img ]] && [ -f "$outname".img ]; then
+                mv "$outname".img "$outdir/$outname".img
+            fi
+        done
     fi
-fi
+done
 
 if [[ $(7z l $romzip | grep system.new.dat) ]]; then
     echo "Aonly OTA detected"
