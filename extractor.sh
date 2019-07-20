@@ -32,8 +32,8 @@ sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 
 romzip="$(realpath $1)"
-PARTITIONS="system vendor cust odm oem modem dtbo boot tz"
-EXT4PARTITIONS="system vendor cust odm oem"
+PARTITIONS="system vendor cust odm oem factory product modem dtbo boot tz"
+EXT4PARTITIONS="system vendor cust odm oem factory product"
 OTHERPARTITIONS="tz.mbn:tz NON-HLOS:modem boot-verified.img:boot dtbo-verified.img:dtbo"
 
 echo "Create Temp and out dir"
