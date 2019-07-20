@@ -186,9 +186,13 @@ elif [[ $(7z l $romzip | grep rawprogram) ]]; then
         if [[ ! $partitionsonzip == "" ]]; then
             7z e $romzip $partitionsonzip 2>/dev/null >> $tmpdir/zip.log
             if [[ ! -f "$partition.img" ]]; then
-                rawprogramsfile=$(grep -rlw $partition rawprogram*)
-                $packsparseimg -t $partition -x $rawprogramsfile > $tmpdir/extract.log
-                mv "$partition.raw" "$partition.img"
+                if [[ -f "$partition.raw.img" ]]; then
+                    mv "$partition.raw.img" "$partition.img"
+                else
+                    rawprogramsfile=$(grep -rlw $partition rawprogram*)
+                    $packsparseimg -t $partition -x $rawprogramsfile > $tmpdir/extract.log
+                    mv "$partition.raw" "$partition.img"
+                fi
             fi
         fi
     done
