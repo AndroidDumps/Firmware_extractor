@@ -114,21 +114,17 @@ elif [[ $(7z l -ba $romzip | grep "system_new.img\|system.img$") ]]; then
         if [[ -f $partition_new.img ]]; then
             mv $partition_new.img $partition.img
         fi
+        if [[ -f $partition.img.ext4 ]]; then
+            mv $partition.img.ext4 $partition.img
+        fi
     done
     romzip=""
 elif [[ $(7z l -ba $romzip | grep .tar) && ! $(7z l -ba $romzip | grep tar.md5 | rev | gawk '{ print $1 }' | rev | grep AP_) ]]; then
     tar=$(7z l -ba $romzip | grep .tar | rev | gawk '{ print $1 }' | rev)
     echo "non AP tar detected"
     7z e $romzip $tar 2>/dev/null >> $tmpdir/zip.log
-    echo "Extracting images..."
-    for partition in $PARTITIONS; do
-        foundpartitions=$(7z l -ba $tar | rev | gawk '{ print $1 }' | rev | grep $partition.img)
-        7z e $tar $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
-        if [[ -f $partition.img.ext4 ]]; then
-            mv $partition.img.ext4 $partition.img
-        fi
-    done
-    rm -rf $tar
+    "$LOCALDIR/extractor.sh" $tar "$outdir"
+    exit
 elif [[ $(7z l -ba $romzip | grep tar.md5 | rev | gawk '{ print $1 }' | rev | grep AP_) ]]; then
     echo "AP tarmd5 detected"
     mainmd5=$(7z l -ba $romzip | grep tar.md5 | rev | gawk '{ print $1 }' | rev | grep AP_)
