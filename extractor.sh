@@ -108,7 +108,7 @@ if [[ $(7z l $romzip | grep system.new.dat) ]]; then
 elif [[ $(7z l $romzip | grep "system_new.img\|system.img$") ]]; then
     echo "Image detected"
     for partition in $PARTITIONS; do
-        7z e $romzip $partition_new.img $partition.img */$partition.img */$partition_new.img 2>/dev/null >> $tmpdir/zip.log
+        7z e $romzip $partition_new.img $partition.img */$partition.img */$partition_new.img */*/$partition.img */*/$partition_new.img 2>/dev/null >> $tmpdir/zip.log
         if [[ -f $partition_new.img ]]; then
             mv $partition_new.img $partition.img
         fi
@@ -120,7 +120,7 @@ elif [[ $(7z l $romzip | grep .tar) && ! $(7z l $romzip | grep tar.md5 | rev | g
     7z e $romzip $tar 2>/dev/null >> $tmpdir/zip.log
     echo "Extracting images..."
     for partition in $PARTITIONS; do
-        7z e $tar $partition.img.ext4 $partition.img */$partition.img 2>/dev/null >> $tmpdir/zip.log
+        7z e $tar $partition.img.ext4 $partition.img */$partition.img */*/$partition.img */*/$partition_new.img 2>/dev/null >> $tmpdir/zip.log
         if [[ -f $partition.img.ext4 ]]; then
             mv $partition.img.ext4 $partition.img
         fi
@@ -163,7 +163,7 @@ elif [[ $(7z l $romzip | grep tar.md5 | rev | gawk '{ print $1 }' | rev | grep A
 elif [[ $(7z l $romzip | grep chunk | grep -v ".*\.so$") ]]; then
     echo "chunk detected"
     for partition in $PARTITIONS; do
-        7z e $romzip *$partition*chunk* */*$partition*chunk* $partition.img */$partition.img 2>/dev/null >> $tmpdir/zip.log
+        7z e $romzip *$partition*chunk* */*$partition*chunk* $partition.img */$partition.img */*/$partition.img 2>/dev/null >> $tmpdir/zip.log
         rm -f *"$partition"_b*
         rm -f *"$partition"_other*
         romchunk=$(ls | grep chunk | grep $partition | sort)
