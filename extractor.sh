@@ -106,7 +106,7 @@ if [[ $(7z l -ba $romzip | grep system.new.dat) ]]; then
             rm -rf $line.transfer.list $line.new.dat
         done
     done
-elif [[ $(7z l -ba $romzip | grep "system_new.img\|system.img$") ]]; then
+elif [[ $(7z l -ba $romzip | grep "system_new.img\|system.img") ]]; then
     echo "Image detected"
     for partition in $PARTITIONS; do
         foundpartitions=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep $partition.img)
