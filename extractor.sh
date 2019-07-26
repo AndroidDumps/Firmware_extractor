@@ -55,7 +55,7 @@ if [[ $MAGIC == "OPPOENCRYPT!" ]]; then
     exit
 fi
 
-if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|.*rawprogram*" | grep -v ".*chunk.*\.so$") ]]; then
+if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|.*rawprogram*\|system.sin" | grep -v ".*chunk.*\.so$") ]]; then
     echo "BRUH: This type of firmwares not supported"
     cd "$LOCALDIR"
     rm -rf "$tmpdir" "$outdir"
@@ -105,6 +105,18 @@ if [[ $(7z l -ba $romzip | grep system.new.dat) ]]; then
             python3 $sdat2img $line.transfer.list $line.new.dat "$outdir"/$line.img > $tmpdir/extract.log
             rm -rf $line.transfer.list $line.new.dat
         done
+    done
+elif [[ $(7z l -ba $romzip | grep "system.sin") ]]; then
+    echo "sin detected"
+    cd $tmpdir
+    for partition in $PARTITIONS; do
+        7z e -y $romzip $partition.sin 2>/dev/null >> $tmpdir/zip.log
+    done
+    mono $toolsdir/UnSIN.exe -d $tmpdir
+    rm -rf $tmpdir/*.sin
+    ext4_list=`find $tmpdir/ -type f -printf '%P\n' | sort`
+    for file in $ext4_list; do
+        mv $tmpdir/$file $(echo "$outdir/$file" | sed -r 's|ext4|img|g')
     done
 elif [[ $(7z l -ba $romzip | grep "system_new.img\|system.img") ]]; then
     echo "Image detected"
