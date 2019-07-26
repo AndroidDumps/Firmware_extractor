@@ -34,7 +34,7 @@ ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 romzip="$(realpath $1)"
 PARTITIONS="system vendor cust odm oem factory product xrom modem dtbo boot tz"
 EXT4PARTITIONS="system vendor cust odm oem factory product xrom"
-OTHERPARTITIONS="tz.mbn:tz NON-HLOS:modem boot-verified.img:boot dtbo-verified.img:dtbo"
+OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem NON-HLOS:modem boot-verified.img:boot dtbo-verified.img:dtbo"
 
 echo "Create Temp and out dir"
 outdir="$LOCALDIR/out"
@@ -73,7 +73,7 @@ for otherpartition in $OTHERPARTITIONS; do
         7z e -y $romzip $foundfiles 2>/dev/null >> $tmpdir/zip.log
         outputs=$(ls *"$filename"*)
         for output in $outputs; do
-            mv $output "$outname".img
+            [[ ! -e "$outname".img ]] && mv $output "$outname".img
             $simg2img "$outname".img "$outdir/$outname".img 2>/dev/null
             if [[ ! -s "$outdir/$outname".img ]] && [ -f "$outname".img ]; then
                 mv "$outname".img "$outdir/$outname".img
