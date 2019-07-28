@@ -9,6 +9,7 @@
 # AB OTA
 # Image zip
 # ozip
+# Sony ftf
 
 usage() {
     echo "Usage: $0 <Path to firmware> [Output Dir]"
