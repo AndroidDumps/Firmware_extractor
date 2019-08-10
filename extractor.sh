@@ -33,8 +33,8 @@ sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 
 romzip="$(realpath $1)"
-PARTITIONS="system vendor cust odm oem factory product xrom modem dtbo boot tz"
-EXT4PARTITIONS="system vendor cust odm oem factory product xrom"
+PARTITIONS="system vendor cust odm oem factory product xrom modem dtbo boot tz systemex"
+EXT4PARTITIONS="system vendor cust odm oem factory product xrom systemex"
 OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem NON-HLOS:modem boot-verified.img:boot dtbo-verified.img:dtbo"
 
 echo "Create Temp and out dir"
@@ -223,11 +223,13 @@ elif [[ $(7z l -ba $romzip | grep payload.bin) ]]; then
     exit
 elif [[ $(7z l -ba $romzip | grep "system.*.bin") ]]; then
     echo "Update bin firmware detected"
-    7z x -y $romzip -o"$tmpdir"
+    for partition in $PARTITIONS; do
+        7z e -y $romzip $partition-p* 2>/dev/null >> $tmpdir/zip.log
+    done
     bin_list=`find "$tmpdir" -type f -name "*.bin" -printf '%P\n' | sort`
     for file in $bin_list; do
-        DIR_NAME=$(echo $file | sed "s|-p.*||g")
-        7z x -y "$tmpdir/$file" -o"$outdir/$DIR_NAME"
+        NEW_NAME=$(echo $file | sed "s|-p.*|.img|g")
+        mv "$tmpdir/$file" "$outdir/$NEW_NAME"
     done
 elif [[ $(7z l -ba $romzip | grep "image.*.zip\|update.zip") ]]; then
     echo "Image zip firmware detected"
