@@ -126,8 +126,9 @@ elif [[ $(7z l -ba $romzip | grep "system-p") ]]; then
     for partition in $PARTITIONS; do
         foundpartitions=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep $partition-p)
         7z e -y $romzip $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
-        bin_name=$(ls $partition-p*)
-        mv "$bin_name" "$partition.img"
+        if [ ! -z $(ls $partition-p*) ]; then
+            mv $(ls $partition-p*) "$partition.img"
+        fi
     done
 elif [[ $(7z l -ba $romzip | grep "system_new.img\|system.img") ]]; then
     echo "Image detected"
@@ -236,7 +237,8 @@ elif [[ $(7z l -ba $romzip | grep "image.*.zip\|update.zip") ]]; then
     thezip=$(7z l -ba $romzip | grep "image.*.zip\|update.zip" | rev | gawk '{ print $1 }' | rev)
     7z e -y $romzip $thezip 2>/dev/null >> $tmpdir/zip.log
     thezipfile=$(echo $thezip | rev | cut -d "/" -f 1 | rev)
-    "$LOCALDIR/extractor.sh" "$thezipfile" "$outdir"
+    mv $thezipfile temp.zip
+    "$LOCALDIR/extractor.sh" temp.zip "$outdir"
     exit
 fi
 
