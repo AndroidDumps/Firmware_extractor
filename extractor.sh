@@ -10,6 +10,8 @@
 # Image zip
 # ozip
 # Sony ftf
+# ZTE update.zip
+# KDDI .bin
 
 usage() {
     echo "Usage: $0 <Path to firmware> [Output Dir]"
