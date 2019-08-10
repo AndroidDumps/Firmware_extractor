@@ -226,7 +226,7 @@ elif [[ $(7z l -ba $romzip | grep "system.*.bin") ]]; then
     7z x -y $romzip -o"$tmpdir"
     bin_list=`find "$tmpdir" -type f -name "*.bin" -printf '%P\n' | sort`
     for file in $bin_list; do
-        DIR_NAME=$(echo $file | cut -d . -f1)
+        DIR_NAME=$(echo $file | sed "s|-p.*||g")
         7z x -y "$tmpdir/$file" -o"$outdir/$DIR_NAME"
     done
 elif [[ $(7z l -ba $romzip | grep "image.*.zip\|update.zip") ]]; then
