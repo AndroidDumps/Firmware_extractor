@@ -144,7 +144,7 @@ elif [[ $(7z l -ba $romzip | grep "system-p") ]]; then
     for partition in $PARTITIONS; do
         foundpartitions=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep $partition-p)
         7z e -y $romzip $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
-        if [ ! -z $(ls $partition-p*) ]; then
+        if [ ! -z $foundpartitions ]; then
             mv $(ls $partition-p*) "$partition.img"
         fi
     done
