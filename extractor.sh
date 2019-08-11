@@ -109,6 +109,24 @@ if [[ $(7z l -ba $romzip | grep system.new.dat) ]]; then
             rm -rf $line.transfer.list $line.new.dat
         done
     done
+elif [[ $(7z l -ba $romzip | grep chunk | grep -v ".*\.so$") ]]; then
+    echo "chunk detected"
+    for partition in $PARTITIONS; do
+        foundpartitions=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep $partition.img)
+        7z e -y $romzip *$partition*chunk* */*$partition*chunk* $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
+        rm -f *"$partition"_b*
+        rm -f *"$partition"_other*
+        romchunk=$(ls | grep chunk | grep $partition | sort)
+        if [[ $(echo "$romchunk" | grep "sparsechunk") ]]; then
+            $simg2img $(echo "$romchunk" | tr '\n' ' ') $partition.img.raw 2>/dev/null
+            rm -rf *$partition*chunk*
+            if [[ -f $partition.img ]]; then
+                rm -rf $partition.img.raw
+            else
+                mv $partition.img.raw $partition.img
+            fi
+        fi
+    done
 elif [[ $(7z l -ba $romzip | grep "system.sin") ]]; then
     echo "sin detected"
     cd $tmpdir
@@ -183,24 +201,6 @@ elif [[ $(7z l -ba $romzip | grep tar.md5 | rev | gawk '{ print $1 }' | rev | gr
         exit 1
     fi
     romzip=""
-elif [[ $(7z l -ba $romzip | grep chunk | grep -v ".*\.so$") ]]; then
-    echo "chunk detected"
-    for partition in $PARTITIONS; do
-        foundpartitions=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep $partition.img)
-        7z e -y $romzip *$partition*chunk* */*$partition*chunk* $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
-        rm -f *"$partition"_b*
-        rm -f *"$partition"_other*
-        romchunk=$(ls | grep chunk | grep $partition | sort)
-        if [[ $(echo "$romchunk" | grep "sparsechunk") ]]; then
-            $simg2img $(echo "$romchunk" | tr '\n' ' ') $partition.img.raw 2>/dev/null
-            rm -rf *$partition*chunk*
-            if [[ -f $partition.img ]]; then
-                rm -rf $partition.img.raw
-            else
-                mv $partition.img.raw $partition.img
-            fi
-        fi
-    done
 elif [[ $(7z l -ba $romzip | grep rawprogram) ]]; then
     echo "QFIL detected"
     rawprograms=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep rawprogram)
