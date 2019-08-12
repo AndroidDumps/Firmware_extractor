@@ -30,6 +30,7 @@ HOST="$(uname)"
 toolsdir="$LOCALDIR/tools"
 simg2img="$toolsdir/$HOST/bin/simg2img"
 packsparseimg="$toolsdir/$HOST/bin/packsparseimg"
+unsin="$toolsdir/$HOST/bin/unsin"
 payload_extractor="$toolsdir/update_payload_extractor/extract.py"
 sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
@@ -133,7 +134,7 @@ elif [[ $(7z l -ba $romzip | grep "system.sin") ]]; then
     for partition in $PARTITIONS; do
         7z e -y $romzip $partition.sin 2>/dev/null >> $tmpdir/zip.log
     done
-    mono $toolsdir/UnSIN.exe -d $tmpdir
+    $unsin -d $tmpdir
     rm -rf $tmpdir/*.sin
     ext4_list=`find $tmpdir/ -type f -printf '%P\n' | sort`
     for file in $ext4_list; do

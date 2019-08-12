@@ -9,30 +9,6 @@ apt install unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mp
 apt install liblzma-dev python-pip brotli lz4
 pip install backports.lzma protobuf pycrypto
 ```
-Also install [mono](https://www.mono-project.com/download/stable/#download-lin)
-
-For 18.04
-
-```
-sudo apt install gnupg ca-certificates
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
-```
-
-For 16.04
-
-```
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-sudo apt install apt-transport-https ca-certificates
-echo "deb https://download.mono-project.com/repo/ubuntu stable-xenial main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
-```
-
-Then
-
-```
-sudo apt update
-sudo apt install mono-devel
-```
 ### Mac
 ```
 brew install protobuf liblzma-dev brotli lz4
