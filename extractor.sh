@@ -34,6 +34,7 @@ unsin="$toolsdir/$HOST/bin/unsin"
 payload_extractor="$toolsdir/update_payload_extractor/extract.py"
 sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
+lpunpack="$toolsdir/$HOST/bin/lpunpack"
 
 romzip="$(realpath $1)"
 PARTITIONS="system vendor cust odm oem factory product xrom modem dtbo boot tz systemex"
@@ -59,7 +60,7 @@ if [[ $MAGIC == "OPPOENCRYPT!" ]]; then
     exit
 fi
 
-if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|update.zip\|.*rawprogram*\|system.sin\|system-p" | grep -v ".*chunk.*\.so$") ]]; then
+if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|image.*.zip\|update.zip\|.*rawprogram*\|system.sin\|system-p\|super" | grep -v ".*chunk.*\.so$") ]]; then
     echo "BRUH: This type of firmwares not supported"
     cd "$LOCALDIR"
     rm -rf "$tmpdir" "$outdir"
@@ -110,7 +111,7 @@ if [[ $(7z l -ba $romzip | grep system.new.dat) ]]; then
             rm -rf $line.transfer.list $line.new.dat
         done
     done
-elif [[ $(7z l -ba $romzip | grep chunk | grep -v ".*\.so$") ]]; then
+elif [[ $(7z l -ba $romzip | grep system | grep chunk | grep -v ".*\.so$") ]]; then
     echo "chunk detected"
     for partition in $PARTITIONS; do
         foundpartitions=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep $partition.img)
@@ -162,6 +163,32 @@ elif [[ $(7z l -ba $romzip | grep "system_new.img\|system.img") ]]; then
         fi
     done
     romzip=""
+elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
+    echo "super detected"
+    foundsupers=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep "super.img")
+    7z e -y $romzip $foundsupers dummypartition 2>/dev/null >> $tmpdir/zip.log
+    superchunk=$(ls | grep chunk | grep super | sort)
+    if [[ $(echo "$superchunk" | grep "sparsechunk") ]]; then
+        $simg2img $(echo "$superchunk" | tr '\n' ' ') super.img.raw 2>/dev/null
+        rm -rf *super*chunk*
+    fi
+    if [ -f super.img ]; then
+        $simg2img super.img super.img.raw 2>/dev/null
+    fi
+    if [[ ! -s super.img.raw ]] && [ -f super.img ]; then
+        mv super.img super.img.raw
+    fi
+
+    for partition in $PARTITIONS; do
+        $lpunpack --partition="$partition"_a super.img.raw 2>/dev/null
+        if [ -f "$partition"_a.img ]; then
+            mv "$partition"_a.img "$partition".img
+        else
+            foundpartitions=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep $partition.img)
+            7z e -y $romzip $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
+        fi
+    done
+    rm -rf super.img.raw
 elif [[ $(7z l -ba $romzip | grep .tar) && ! $(7z l -ba $romzip | grep tar.md5 | rev | gawk '{ print $1 }' | rev | grep AP_) ]]; then
     tar=$(7z l -ba $romzip | grep .tar | rev | gawk '{ print $1 }' | rev)
     echo "non AP tar detected"
