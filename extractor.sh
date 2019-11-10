@@ -272,9 +272,9 @@ elif [[ $(7z l -ba $romzip | grep "image.*.zip\|update.zip") ]]; then
 elif [[ $(7z l -ba $romzip | grep "UPDATE.APP") ]]; then
     echo "Huawei UPDATE.APP detected"
     7z x $romzip UPDATE.APP
-    $splituapp -f "UPDATE.APP" -l super || (
+    python3 $splituapp -f "UPDATE.APP" -l super || (
     for partition in $PARTITIONS; do
-        $splituapp -f "UPDATE.APP" -l ${partition/.img/} || echo "$partition not found in UPDATE.APP"
+        python3 $splituapp -f "UPDATE.APP" -l ${partition/.img/} || echo "$partition not found in UPDATE.APP"
     done)
     if [ -f super.img ]; then
         ($simg2img super.img super.img.raw || mv super.img super.img.raw) 2>/dev/null
