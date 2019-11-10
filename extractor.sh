@@ -180,7 +180,7 @@ elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
     fi
 
     for partition in $PARTITIONS; do
-        $lpunpack --partition="$partition"_a super.img.raw 2>/dev/null
+        ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
         if [ -f "$partition"_a.img ]; then
             mv "$partition"_a.img "$partition".img
         else
