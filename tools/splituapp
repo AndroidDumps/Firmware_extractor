@@ -26,6 +26,8 @@ args = parser.parse_args()
 source = args.filename
 
 flist = None
+found = False
+
 if args.list:
 	flist = args.list
 
@@ -71,10 +73,9 @@ with open(source, 'rb') as f:
 			crcdata = f.read(headersize - 98)
 			
 			getimg = None
-			if flist and filename in flist:
+			if (flist and filename in flist) or (not flist):
 				getimg = 1
-			elif not flist:
-				getimg = 1
+				found = True
 			
 			if getimg:
 				imgdata = f.read(filesize)
@@ -84,7 +85,7 @@ with open(source, 'rb') as f:
 						o.write(imgdata)
 				except:
 					print('ERROR: Failed to create '+filename+'.img\n')
-					sys.exit()
+					sys.exit(1)
 				
 			else:
 				f.seek(filesize, 1)
@@ -93,4 +94,5 @@ with open(source, 'rb') as f:
 			if xbytes < bytenum:
 				f.seek(xbytes, 1)
 
-print('\nExtraction complete')
+if not found:
+	sys.exit(1)
