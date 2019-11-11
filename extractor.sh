@@ -151,7 +151,7 @@ elif [[ $(7z l -ba $romzip | grep "system-p") ]]; then
             mv $(ls $partition-p*) "$partition.img"
         fi
     done
-elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.img") ]]; then
+elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img") ]]; then
     echo "Image detected"
     for partition in $PARTITIONS; do
         foundpartitions=$(7z l -ba $romzip | gawk '{ print $NF }' | grep $partition.img)
