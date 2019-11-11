@@ -150,8 +150,8 @@ elif [[ $(7z l -ba $romzip | grep "system.sin") ]]; then
 elif [[ $(7z l -ba $romzip | grep ".*.pac") ]]; then
     echo "pac detected"
     cd $tmpdir
-    foundpac=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep ".*.pac")
-    7z e -y $romzip $foundpac dummypartition 2>/dev/null >> $tmpdir/zip.log
+    7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
+    find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g'
     pac_list=`find $tmpdir/ -type f -name "*.pac" -printf '%P\n' | sort`
     for file in $pac_list; do
        $pacextractor $file
@@ -279,6 +279,7 @@ elif [[ $(7z l -ba $romzip | grep ".*.rar\|.*.zip") ]]; then
     echo "Image zip firmware detected"
     mkdir -p $tmpdir/zipfiles
     7z e -y $romzip -o$tmpdir/zipfiles 2>/dev/null >> $tmpdir/zip.log
+    find $tmpdir/zipfiles -name "* *" -type d,f | rename 's/ /_/g'
     zip_list=`find $tmpdir/zipfiles -type f -size +300M \( -name "*.rar*" -o -name "*.zip*" \) -printf '%P\n' | sort`
     for file in $zip_list; do
        "$LOCALDIR/extractor.sh" $tmpdir/zipfiles/$file "$outdir"
