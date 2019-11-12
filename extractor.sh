@@ -190,12 +190,6 @@ elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
         fi
     done
     rm -rf super.img.raw
-elif [[ $(7z l -ba $romzip | grep .tar) && ! $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
-    tar=$(7z l -ba $romzip | grep .tar | gawk '{ print $NF }')
-    echo "non AP tar detected"
-    7z e -y $romzip $tar 2>/dev/null >> $tmpdir/zip.log
-    "$LOCALDIR/extractor.sh" $tar "$outdir"
-    exit
 elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
     echo "AP tarmd5 detected"
     mainmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_)
@@ -249,6 +243,12 @@ elif [[ $(7z l -ba $romzip | grep rawprogram) ]]; then
             fi
         fi
     done
+elif [[ $(7z l -ba $romzip | grep .tar) && ! $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
+    tar=$(7z l -ba $romzip | grep .tar | gawk '{ print $NF }')
+    echo "non AP tar detected"
+    7z e -y $romzip $tar 2>/dev/null >> $tmpdir/zip.log
+    "$LOCALDIR/extractor.sh" $tar "$outdir"
+    exit
 elif [[ $(7z l -ba $romzip | grep payload.bin) ]]; then
     echo "AB OTA detected"
     7z e -y $romzip payload.bin 2>/dev/null >> $tmpdir/zip.log
