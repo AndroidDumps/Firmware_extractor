@@ -202,8 +202,8 @@ elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]];
     cscmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep CSC_)
     echo "Extracting tarmd5"
     7z e -y $romzip $mainmd5 $cscmd5 2>/dev/null >> $tmpdir/zip.log
-    mainmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_ | gawk '{ print $NF }')
-    cscmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep CSC_ | gawk '{ print $NF }')
+    mainmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_ | sed 's|.*/||')
+    cscmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep CSC_ | sed 's|.*/||')
     echo "Extracting images..."
     for i in "$mainmd5" "$cscmd5"; do
         for partition in $PARTITIONS; do
@@ -265,7 +265,7 @@ elif [[ $(7z l -ba $romzip | grep "image.*.zip\|update.zip") ]]; then
     echo "Image zip firmware detected"
     thezip=$(7z l -ba $romzip | grep "image.*.zip\|update.zip" | gawk '{ print $NF }')
     7z e -y $romzip $thezip 2>/dev/null >> $tmpdir/zip.log
-    thezipfile=$(echo $thezip | gawk '{ print $NF }')
+    thezipfile=$(echo $thezip | sed 's|.*/||')
     mv $thezipfile temp.zip
     "$LOCALDIR/extractor.sh" temp.zip "$outdir"
     exit
