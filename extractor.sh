@@ -12,6 +12,8 @@
 # Sony ftf
 # ZTE update.zip
 # KDDI .bin
+# bin images
+# pac
 
 usage() {
     echo "Usage: $0 <Path to firmware> [Output Dir]"
@@ -66,7 +68,7 @@ if [[ $MAGIC == "OPPOENCRYPT!" ]] || [[ "$romzipext" == "ozip" ]]; then
     exit
 fi
 
-if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|system-p\|super\|UPDATE.APP\|.*.pac" | grep -v ".*chunk.*\.so$") ]]; then
+if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|system-p\|super\|UPDATE.APP\|.*.pac" | grep -v ".*chunk.*\.so$") ]]; then
     echo "BRUH: This type of firmwares not supported"
     cd "$LOCALDIR"
     rm -rf "$tmpdir" "$outdir"
@@ -155,6 +157,16 @@ elif [[ $(7z l -ba $romzip | grep ".*.pac") ]]; then
     pac_list=`find $tmpdir/ -type f -name "*.pac" -printf '%P\n' | sort`
     for file in $pac_list; do
        $pacextractor $file
+    done
+elif [[ $(7z l -ba $romzip | grep "system.bin") ]]; then
+    echo "bin images detected"
+    for partition in $PARTITIONS; do
+        7z e -y $romzip $partition.bin 2>/dev/null >> $tmpdir/zip.log
+    done
+    bin_list=`find "$tmpdir" -type f -name "*.bin" -printf '%P\n' | sort`
+    for file in $bin_list; do
+        NEW_NAME=$(echo $file | sed "s|.bin|.img|g")
+        mv "$tmpdir/$file" "$outdir/$NEW_NAME"
     done
 elif [[ $(7z l -ba $romzip | grep "system-p") ]]; then
     echo "P suffix images detected"
