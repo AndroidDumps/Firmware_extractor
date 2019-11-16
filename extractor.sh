@@ -14,6 +14,7 @@
 # KDDI .bin
 # bin images
 # pac
+# sign images
 
 usage() {
     echo "Usage: $0 <Path to firmware> [Output Dir]"
@@ -68,7 +69,7 @@ if [[ $MAGIC == "OPPOENCRYPT!" ]] || [[ "$romzipext" == "ozip" ]]; then
     exit
 fi
 
-if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|system-p\|super\|UPDATE.APP\|.*.pac" | grep -v ".*chunk.*\.so$") ]]; then
+if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|system-p\|super\|UPDATE.APP\|.*.pac" | grep -v ".*chunk.*\.so$") ]]; then
     echo "BRUH: This type of firmwares not supported"
     cd "$LOCALDIR"
     rm -rf "$tmpdir" "$outdir"
@@ -153,7 +154,7 @@ elif [[ $(7z l -ba $romzip | grep ".*.pac") ]]; then
     echo "pac detected"
     cd $tmpdir
     7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
-    find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g'
+    find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
     pac_list=`find $tmpdir/ -type f -name "*.pac" -printf '%P\n' | sort`
     for file in $pac_list; do
        $pacextractor $file
@@ -176,6 +177,20 @@ elif [[ $(7z l -ba $romzip | grep "system-p") ]]; then
         if [ ! -z "$foundpartitions" ]; then
             mv $(ls $partition-p*) "$partition.img"
         fi
+    done
+elif [[ $(7z l -ba $romzip | grep "system-sign.img") ]]; then
+    echo "sign images detected"
+    7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
+    find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1 # removes space from file name
+    find $tmpdir/ -mindepth 2 -type f -name "*-sign.img" -exec mv {} . \; # move .img in sub-dir to $tmpdir
+    find $tmpdir/ -type f ! -name "*-sign.img" -exec rm -rf {} \; # delete other files
+    sign_list=`find "$tmpdir" -maxdepth 1 -type f -name "*-sign.img" -printf '%P\n' | sort`
+    for file in $sign_list; do
+        rm -rf "$tmpdir/x.img" "$tmpdir/y.img"
+        dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
+        simg2img "$tmpdir/x.img" "$tmpdir/y.img" > /dev/null 2>&1
+        NEW_NAME=$(echo $file | sed "s|-sign.img|.img|g")
+        mv "$tmpdir/y.img" "$outdir/$NEW_NAME"
     done
 elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img") ]]; then
     echo "Image detected"
@@ -291,7 +306,7 @@ elif [[ $(7z l -ba $romzip | grep ".*.rar\|.*.zip") ]]; then
     echo "Image zip firmware detected"
     mkdir -p $tmpdir/zipfiles
     7z e -y $romzip -o$tmpdir/zipfiles 2>/dev/null >> $tmpdir/zip.log
-    find $tmpdir/zipfiles -name "* *" -type d,f | rename 's/ /_/g'
+    find $tmpdir/zipfiles -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
     zip_list=`find $tmpdir/zipfiles -type f -size +300M \( -name "*.rar*" -o -name "*.zip*" \) -printf '%P\n' | sort`
     for file in $zip_list; do
        "$LOCALDIR/extractor.sh" $tmpdir/zipfiles/$file "$outdir"
