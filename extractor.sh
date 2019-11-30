@@ -222,7 +222,7 @@ elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]];
             echo "$tarulist" | while read line; do
                 tar -xf "$i" "$line"
                 if [[ $(echo "$line" | grep "\.lz4") ]]; then
-                    lz4 "$line"
+                    lz4 -q "$line"
                     rm -f "$line"
                     line=$(echo "$line" | sed 's/\.lz4$//')
                 fi
