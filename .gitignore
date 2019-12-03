@@ -1,4 +1,5 @@
 tmp
 out
+tools/extract_android_ota_payload/
 tools/oppo_ozip_decrypt/
 tools/update_payload_extractor/

@@ -29,6 +29,7 @@ if [ "$1" == "" ]; then
 fi
 
 LOCALDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+[[ ! -d "$LOCALDIR/tools/extract_android_ota_payload" ]] && git clone -q https://github.com/cyxx/extract_android_ota_payload.git "$LOCALDIR/tools/extract_android_ota_payload"
 [[ ! -d "$LOCALDIR/tools/oppo_ozip_decrypt" ]] && git clone -q https://github.com/bkerler/oppo_ozip_decrypt.git "$LOCALDIR/tools/oppo_ozip_decrypt"
 [[ ! -d "$LOCALDIR/tools/update_payload_extractor" ]] && git clone -q https://github.com/erfanoabdi/update_payload_extractor.git "$LOCALDIR/tools/update_payload_extractor"
 HOST="$(uname)"
@@ -298,8 +299,9 @@ elif [[ $(7z l -ba $romzip | grep .tar) && ! $(7z l -ba $romzip | grep tar.md5 |
 elif [[ $(7z l -ba $romzip | grep payload.bin) ]]; then
     echo "AB OTA detected"
     7z e -y $romzip payload.bin 2>/dev/null >> $tmpdir/zip.log
+    python "$LOCALDIR/tools/extract_android_ota_payload/extract_android_ota_payload.py" payload.bin $tmpdir
     for partition in $PARTITIONS; do
-        python $payload_extractor payload.bin --partitions $partition --output_dir $outdir > $tmpdir/extract.log
+        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
     rm payload.bin
     rm -rf "$tmpdir"
