@@ -29,6 +29,8 @@ if [ "$1" == "" ]; then
 fi
 
 LOCALDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+[[ ! -d "$LOCALDIR/tools/oppo_ozip_decrypt" ]] && git clone -q https://github.com/bkerler/oppo_ozip_decrypt.git "$LOCALDIR/tools/oppo_ozip_decrypt"
+[[ ! -d "$LOCALDIR/tools/update_payload_extractor" ]] && git clone -q https://github.com/erfanoabdi/update_payload_extractor.git "$LOCALDIR/tools/update_payload_extractor"
 HOST="$(uname)"
 toolsdir="$LOCALDIR/tools"
 simg2img="$toolsdir/$HOST/bin/simg2img"
