@@ -1,6 +1,0 @@
-[submodule "tools/update_payload_extractor"]
-	path = tools/update_payload_extractor
-	url = https://github.com/erfanoabdi/update_payload_extractor.git
-[submodule "tools/oppo_ozip_decrypt"]
-	path = tools/oppo_ozip_decrypt
-	url = https://github.com/bkerler/oppo_ozip_decrypt.git
