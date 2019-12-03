@@ -187,13 +187,16 @@ elif [[ $(7z l -ba $romzip | grep "system-sign.img") ]]; then
     find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1 # removes space from file name
     find $tmpdir/ -mindepth 2 -type f -name "*-sign.img" -exec mv {} . \; # move .img in sub-dir to $tmpdir
     find $tmpdir/ -type f ! -name "*-sign.img" -exec rm -rf {} \; # delete other files
-    sign_list=`find "$tmpdir" -maxdepth 1 -type f -name "*-sign.img" -printf '%P\n' | sort`
+    find "$tmpdir" -maxdepth 1 -type f -name "*-sign.img" | rename 's/-sign.img/.img/g' > /dev/null 2>&1 # proper .img names
+    mv "$tmpdir/boot.img" "$outdir/boot.img"
+    sign_list=`find "$tmpdir" -maxdepth 1 -type f -name "*.img" -printf '%P\n' | sort`
     for file in $sign_list; do
-        rm -rf "$tmpdir/x.img" "$tmpdir/y.img"
+        rm -rf "$tmpdir/x.img"
         dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
-        simg2img "$tmpdir/x.img" "$tmpdir/y.img" > /dev/null 2>&1
-        NEW_NAME=$(echo $file | sed "s|-sign.img|.img|g")
-        mv "$tmpdir/y.img" "$outdir/$NEW_NAME"
+        simg2img "$tmpdir/x.img" "$tmpdir/$file" > /dev/null 2>&1
+    done
+    for partition in $PARTITIONS; do
+        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
 elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img") ]]; then
     echo "Image detected"
