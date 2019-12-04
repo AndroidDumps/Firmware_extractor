@@ -141,19 +141,21 @@ elif [[ $(7z l -ba $romzip | grep system | grep chunk | grep -v ".*\.so$") ]]; t
             fi
         fi
     done
-elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img") ]]; then
+elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img\|\/system_image.emmc.img\|^system_image.emmc.img") ]]; then
     echo "Image detected"
+    7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
+    find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1 # removes space from file name
+    find $tmpdir/ -mindepth 2 -type f -name "*_image.emmc.img" -exec mv {} . \; # move .img in sub-dir to $tmpdir
+    find $tmpdir/ -mindepth 2 -type f -name "*_new.img" -exec mv {} . \; # move .img in sub-dir to $tmpdir
+    find $tmpdir/ -mindepth 2 -type f -name "*.img.ext4" -exec mv {} . \; # move .img in sub-dir to $tmpdir
+    find $tmpdir/ -mindepth 2 -type f -name "*.img" -exec mv {} . \; # move .img in sub-dir to $tmpdir
+    find $tmpdir/ -type f ! -name "*img*" -exec rm -rf {} \; # delete other files
+    find "$tmpdir" -maxdepth 1 -type f -name "*_image.emmc.img" | rename 's/_image.emmc.img/.img/g' > /dev/null 2>&1 # proper .img names
+    find "$tmpdir" -maxdepth 1 -type f -name "*_new.img" | rename 's/_new.img/.img/g' > /dev/null 2>&1 # proper .img names
+    find "$tmpdir" -maxdepth 1 -type f -name "*.img.ext4" | rename 's/.img.ext4/.img/g' > /dev/null 2>&1 # proper .img names
     for partition in $PARTITIONS; do
-        foundpartitions=$(7z l -ba $romzip | gawk '{ print $NF }' | grep $partition.img)
-        7z e -y $romzip $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
-        if [[ -f $partition_new.img ]]; then
-            mv $partition_new.img $partition.img
-        fi
-        if [[ -f $partition.img.ext4 ]]; then
-            mv $partition.img.ext4 $partition.img
-        fi
+        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
-    romzip=""
 elif [[ $(7z l -ba $romzip | grep "system.sin") ]]; then
     echo "sin detected"
     cd $tmpdir
