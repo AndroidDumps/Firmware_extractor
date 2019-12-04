@@ -141,6 +141,19 @@ elif [[ $(7z l -ba $romzip | grep system | grep chunk | grep -v ".*\.so$") ]]; t
             fi
         fi
     done
+elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img") ]]; then
+    echo "Image detected"
+    for partition in $PARTITIONS; do
+        foundpartitions=$(7z l -ba $romzip | gawk '{ print $NF }' | grep $partition.img)
+        7z e -y $romzip $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
+        if [[ -f $partition_new.img ]]; then
+            mv $partition_new.img $partition.img
+        fi
+        if [[ -f $partition.img.ext4 ]]; then
+            mv $partition.img.ext4 $partition.img
+        fi
+    done
+    romzip=""
 elif [[ $(7z l -ba $romzip | grep "system.sin") ]]; then
     echo "sin detected"
     cd $tmpdir
@@ -198,19 +211,6 @@ elif [[ $(7z l -ba $romzip | grep "system-sign.img") ]]; then
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
-elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img") ]]; then
-    echo "Image detected"
-    for partition in $PARTITIONS; do
-        foundpartitions=$(7z l -ba $romzip | gawk '{ print $NF }' | grep $partition.img)
-        7z e -y $romzip $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
-        if [[ -f $partition_new.img ]]; then
-            mv $partition_new.img $partition.img
-        fi
-        if [[ -f $partition.img.ext4 ]]; then
-            mv $partition.img.ext4 $partition.img
-        fi
-    done
-    romzip=""
 elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
     echo "super detected"
     foundsupers=$(7z l -ba $romzip | gawk '{ print $NF }' | grep "super.img")
