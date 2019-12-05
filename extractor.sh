@@ -72,7 +72,7 @@ if [[ $MAGIC == "OPPOENCRYPT!" ]] || [[ "$romzipext" == "ozip" ]]; then
     exit
 fi
 
-if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|system-p\|super\|UPDATE.APP\|.*.pac" | grep -v ".*chunk.*\.so$") ]]; then
+if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|system_X-FLASH-ALL-A2CD.sin\|system-p\|super\|UPDATE.APP\|.*.pac" | grep -v ".*chunk.*\.so$") ]]; then
     echo "BRUH: This type of firmwares not supported"
     cd "$LOCALDIR"
     rm -rf "$tmpdir" "$outdir"
@@ -156,17 +156,15 @@ elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
-elif [[ $(7z l -ba $romzip | grep "system.sin") ]]; then
+elif [[ $(7z l -ba $romzip | grep "system.sin\|system_X-FLASH-ALL-A2CD.sin") ]]; then
     echo "sin detected"
     cd $tmpdir
-    for partition in $PARTITIONS; do
-        7z e -y $romzip $partition.sin 2>/dev/null >> $tmpdir/zip.log
-    done
+    7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
+    find "$tmpdir" -maxdepth 1 -type f -name "*_X-FLASH-ALL-A2CD.sin" | rename 's/_X-FLASH-ALL-A2CD.sin/.sin/g' > /dev/null 2>&1 # proper names
     $unsin -d $tmpdir
-    rm -rf $tmpdir/*.sin
-    ext4_list=`find $tmpdir/ -type f -printf '%P\n' | sort`
-    for file in $ext4_list; do
-        mv $tmpdir/$file $(echo "$outdir/$file" | sed -r 's|ext4|img|g')
+    find "$tmpdir" -maxdepth 1 -type f -name "*.ext4" | rename 's/.ext4/.img/g' > /dev/null 2>&1 # proper names
+    for partition in $PARTITIONS; do
+        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
 elif [[ $(7z l -ba $romzip | grep ".*.pac") ]]; then
     echo "pac detected"
