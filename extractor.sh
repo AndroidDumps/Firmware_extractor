@@ -157,12 +157,11 @@ elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.
 elif [[ $(7z l -ba $romzip | grep "system.sin\|system_X-FLASH-ALL-A2CD.sin") ]]; then
     echo "sin detected"
     7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
+    find $tmpdir/ -mindepth 2 -type f -name "*.sin" -exec mv {} . \; # move .img in sub-dir to $tmpdir
     find "$tmpdir" -maxdepth 1 -type f -name "*_X-FLASH-ALL-A2CD.sin" | rename 's/_X-FLASH-ALL-A2CD.sin/.sin/g' > /dev/null 2>&1 # proper names
     $unsin -d $tmpdir
     find "$tmpdir" -maxdepth 1 -type f -name "*.ext4" | rename 's/.ext4/.img/g' > /dev/null 2>&1 # proper names
-    for partition in $PARTITIONS; do
-        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
-    done
+    romzip=""
 elif [[ $(7z l -ba $romzip | grep ".*.pac") ]]; then
     echo "pac detected"
     7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
@@ -173,14 +172,10 @@ elif [[ $(7z l -ba $romzip | grep ".*.pac") ]]; then
     done
 elif [[ $(7z l -ba $romzip | grep "system.bin") ]]; then
     echo "bin images detected"
-    for partition in $PARTITIONS; do
-        7z e -y $romzip $partition.bin 2>/dev/null >> $tmpdir/zip.log
-    done
-    bin_list=`find "$tmpdir" -type f -name "*.bin" -printf '%P\n' | sort`
-    for file in $bin_list; do
-        NEW_NAME=$(echo $file | sed "s|.bin|.img|g")
-        mv "$tmpdir/$file" "$outdir/$NEW_NAME"
-    done
+    7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
+    find $tmpdir/ -mindepth 2 -type f -name "*.bin" -exec mv {} . \; # move .img in sub-dir to $tmpdir
+    find "$tmpdir" -maxdepth 1 -type f -name "*.bin" | rename 's/.bin/.img/g' > /dev/null 2>&1 # proper names
+    romzip=""
 elif [[ $(7z l -ba $romzip | grep "system-p") ]]; then
     echo "P suffix images detected"
     for partition in $PARTITIONS; do
@@ -204,9 +199,7 @@ elif [[ $(7z l -ba $romzip | grep "system-sign.img") ]]; then
         dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
         simg2img "$tmpdir/x.img" "$tmpdir/$file" > /dev/null 2>&1
     done
-    for partition in $PARTITIONS; do
-        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
-    done
+    romzip=""
 elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
     echo "super detected"
     foundsupers=$(7z l -ba $romzip | gawk '{ print $NF }' | grep "super.img")
