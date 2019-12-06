@@ -153,12 +153,9 @@ elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.
     find "$tmpdir" -maxdepth 1 -type f -name "*_image.emmc.img" | rename 's/_image.emmc.img/.img/g' > /dev/null 2>&1 # proper .img names
     find "$tmpdir" -maxdepth 1 -type f -name "*_new.img" | rename 's/_new.img/.img/g' > /dev/null 2>&1 # proper .img names
     find "$tmpdir" -maxdepth 1 -type f -name "*.img.ext4" | rename 's/.img.ext4/.img/g' > /dev/null 2>&1 # proper .img names
-    for partition in $PARTITIONS; do
-        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
-    done
+    romzip=""
 elif [[ $(7z l -ba $romzip | grep "system.sin\|system_X-FLASH-ALL-A2CD.sin") ]]; then
     echo "sin detected"
-    cd $tmpdir
     7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
     find "$tmpdir" -maxdepth 1 -type f -name "*_X-FLASH-ALL-A2CD.sin" | rename 's/_X-FLASH-ALL-A2CD.sin/.sin/g' > /dev/null 2>&1 # proper names
     $unsin -d $tmpdir
@@ -168,7 +165,6 @@ elif [[ $(7z l -ba $romzip | grep "system.sin\|system_X-FLASH-ALL-A2CD.sin") ]];
     done
 elif [[ $(7z l -ba $romzip | grep ".*.pac") ]]; then
     echo "pac detected"
-    cd $tmpdir
     7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
     find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
     pac_list=`find $tmpdir/ -type f -name "*.pac" -printf '%P\n' | sort`
