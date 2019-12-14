@@ -72,7 +72,7 @@ if [[ $MAGIC == "OPPOENCRYPT!" ]] || [[ "$romzipext" == "ozip" ]]; then
     exit
 fi
 
-if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|system_X-FLASH-ALL-A2CD.sin\|system-p\|super\|UPDATE.APP\|.*.pac" | grep -v ".*chunk.*\.so$") ]]; then
+if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|.*system_.*\.sin\|system-p\|super\|UPDATE.APP\|.*.pac" | grep -v ".*chunk.*\.so$") ]]; then
     echo "BRUH: This type of firmwares not supported"
     cd "$LOCALDIR"
     rm -rf "$tmpdir" "$outdir"
@@ -173,11 +173,20 @@ elif [[ $(7z l -ba $romzip | gawk '{print $NF}' | grep "system_new.img\|^system.
     find "$tmpdir" -maxdepth 1 -type f -name "*_new.img" | rename 's/_new.img/.img/g' > /dev/null 2>&1 # proper .img names
     find "$tmpdir" -maxdepth 1 -type f -name "*.img.ext4" | rename 's/.img.ext4/.img/g' > /dev/null 2>&1 # proper .img names
     romzip=""
-elif [[ $(7z l -ba $romzip | grep "system.sin\|system_X-FLASH-ALL-A2CD.sin") ]]; then
+elif [[ $(7z l -ba $romzip | grep "system.sin\|.*system_.*\.sin") ]]; then
     echo "sin detected"
+    to_remove=`7z l $romzip | grep ".*boot_.*\.sin" | gawk '{ print $6 }' | sed -e 's/boot_\(.*\).sin/\1/'`
+    if [ -z "$to_remove" ]
+    then
+      to_remove=`7z l $romzip | grep ".*cache_.*\.sin" | gawk '{ print $6 }' | sed -e 's/cache_\(.*\).sin/\1/'`
+    fi
+    if [ -z "$to_remove" ]
+    then
+      to_remove=`7z l $romzip | grep ".*vendor_.*\.sin" | gawk '{ print $6 }' | sed -e 's/vendor_\(.*\).sin/\1/'`
+    fi
     7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
     find $tmpdir/ -mindepth 2 -type f -name "*.sin" -exec mv {} . \; # move .img in sub-dir to $tmpdir
-    find "$tmpdir" -maxdepth 1 -type f -name "*_X-FLASH-ALL-A2CD.sin" | rename 's/_X-FLASH-ALL-A2CD.sin/.sin/g' > /dev/null 2>&1 # proper names
+    find "$tmpdir" -maxdepth 1 -type f -name "*_$to_remove.sin" | rename 's/_'$to_remove'.sin/.sin/g' > /dev/null 2>&1 # proper names
     $unsin -d $tmpdir
     find "$tmpdir" -maxdepth 1 -type f -name "*.ext4" | rename 's/.ext4/.img/g' > /dev/null 2>&1 # proper names
     romzip=""
@@ -263,7 +272,7 @@ elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]];
             echo "$tarulist" | while read line; do
                 tar -xf "$i" "$line"
                 if [[ $(echo "$line" | grep "\.lz4") ]]; then
-                    lz4 -q "$line"
+                    unlz4 -f -q "$line" "$partition.img"
                     rm -f "$line"
                     line=$(echo "$line" | sed 's/\.lz4$//')
                 fi
