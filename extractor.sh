@@ -16,6 +16,7 @@
 # pac
 # sign images
 # nb0
+# kdz
 
 usage() {
     echo "Usage: $0 <Path to firmware> [Output Dir]"
@@ -45,6 +46,8 @@ lpunpack="$toolsdir/$HOST/bin/lpunpack"
 splituapp="$toolsdir/splituapp"
 pacextractor="$toolsdir/$HOST/bin/pacextractor"
 nb0_extract="$toolsdir/$HOST/bin/nb0-extract"
+kdz_extract="$toolsdir/KDZFileTools.py"
+dz_extract="$toolsdir/undz.py"
 
 romzip="$(realpath $1)"
 romzipext=${romzip##*.}
@@ -72,6 +75,15 @@ if [[ $MAGIC == "OPPOENCRYPT!" ]] || [[ "$romzipext" == "ozip" ]]; then
     fi
     "$LOCALDIR/extractor.sh" "$tmpdir/temp.zip" "$outdir"
     exit
+fi
+
+if [[ $(echo $romzip | grep kdz) ]]; then
+    echo "KDZ detected"
+    cd $outdir
+    python $kdz_extract -f $romzip -x -o "./"
+    dzfile=`ls -l | grep ".*.dz" | gawk '{ print $9 }'`
+    python $dz_extract -f $dzfile -i -o "./"
+    exit 0
 fi
 
 if [[ ! $(7z l -ba $romzip | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|.*system_.*\.sin\|system-p\|super\|UPDATE.APP\|.*.pac\|.*.nb0" | grep -v ".*chunk.*\.so$") ]]; then
