@@ -17,6 +17,7 @@
 # sign images
 # nb0
 # kdz
+# RUU
 
 usage() {
     echo "Usage: $0 <Path to firmware> [Output Dir]"
@@ -48,6 +49,7 @@ pacextractor="$toolsdir/$HOST/bin/pacextractor"
 nb0_extract="$toolsdir/$HOST/bin/nb0-extract"
 kdz_extract="$toolsdir/KDZFileTools.py"
 dz_extract="$toolsdir/undz.py"
+ruu="$toolsdir/$HOST/bin/RUU_Decrypt_Tool"
 
 romzip="$(realpath $1)"
 romzipext=${romzip##*.}
@@ -83,6 +85,19 @@ if [[ $(echo $romzip | grep kdz) ]]; then
     python $kdz_extract -f $romzip -x -o "./"
     dzfile=`ls -l | grep ".*.dz" | gawk '{ print $9 }'`
     python $dz_extract -f $dzfile -i -o "./"
+    exit 0
+fi
+
+if [[ $(echo $romzip | grep -i ruu_ | grep -i exe) ]]; then
+    echo "RUU detected"
+    cd $outdir
+    $ruu -s $romzip 2>/dev/null
+    $ruu -f $romzip 2>/dev/null
+    cd ../../input
+    find OUT -name *.img -exec cp {} $outdir \;
+    find OUT_* -name *.img -exec cp {} $outdir \;
+    rm -rf OUT*
+    cd $outdir
     exit 0
 fi
 
