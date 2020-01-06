@@ -268,7 +268,7 @@ elif [[ $(7z l -ba $romzip | grep "system-sign.img") ]]; then
     for file in $sign_list; do
         rm -rf "$tmpdir/x.img"
         dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
-        simg2img "$tmpdir/x.img" "$tmpdir/$file" > /dev/null 2>&1
+        $simg2img "$tmpdir/x.img" "$tmpdir/$file" > /dev/null 2>&1
     done
     romzip=""
 elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
