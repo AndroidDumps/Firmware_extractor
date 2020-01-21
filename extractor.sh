@@ -93,13 +93,15 @@ fi
 
 if [[ $(echo $romzip | grep -i ruu_ | grep -i exe) ]]; then
     echo "RUU detected"
+    cp $romzip $tmpdir
+    romzip="$tmpdir/$(basename $romzip)"
     $ruu -s $romzip 2>/dev/null
     $ruu -f $romzip 2>/dev/null
-    find "$(dirname $romzip)/OUT"* -name *.img -exec mv {} $tmpdir \;
+    find "$tmpdir/OUT"* -name *.img -exec mv {} $tmpdir \;
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
-    rm -rf $tmpdir "$(dirname $romzip)/OUT"*
+    rm -rf $tmpdir
     exit 0
 fi
 
