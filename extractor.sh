@@ -32,11 +32,25 @@ if [ "$1" == "" ]; then
 fi
 
 LOCALDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-[[ ! -d "$LOCALDIR/tools/extract_android_ota_payload" ]] && git clone -q https://github.com/cyxx/extract_android_ota_payload.git "$LOCALDIR/tools/extract_android_ota_payload"
-[[ ! -d "$LOCALDIR/tools/oppo_ozip_decrypt" ]] && git clone -q https://github.com/bkerler/oppo_ozip_decrypt.git "$LOCALDIR/tools/oppo_ozip_decrypt"
-[[ ! -d "$LOCALDIR/tools/update_payload_extractor" ]] && git clone -q https://github.com/erfanoabdi/update_payload_extractor.git "$LOCALDIR/tools/update_payload_extractor"
 HOST="$(uname)"
 toolsdir="$LOCALDIR/tools"
+
+if [[ ! -d "$toolsdir/extract_android_ota_payload" ]]; then
+    git clone -q https://github.com/cyxx/extract_android_ota_payload.git "$toolsdir/extract_android_ota_payload"
+else
+    git -C "$toolsdir/extract_android_ota_payload" pull
+fi
+if [[ ! -d "$toolsdir/oppo_ozip_decrypt" ]]; then
+    git clone -q https://github.com/bkerler/oppo_ozip_decrypt.git "$toolsdir/oppo_ozip_decrypt"
+else
+    git -C "$toolsdir/oppo_ozip_decrypt" pull
+fi
+if [[ ! -d "$toolsdir/update_payload_extractor" ]]; then
+    git clone -q https://github.com/erfanoabdi/update_payload_extractor.git "$toolsdir/update_payload_extractor"
+else
+    git -C "$toolsdir/update_payload_extractor" pull
+fi
+
 simg2img="$toolsdir/$HOST/bin/simg2img"
 packsparseimg="$toolsdir/$HOST/bin/packsparseimg"
 unsin="$toolsdir/$HOST/bin/unsin"
