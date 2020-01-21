@@ -81,10 +81,13 @@ fi
 
 if [[ $(echo $romzip | grep kdz) ]]; then
     echo "KDZ detected"
-    cd $outdir
     python $kdz_extract -f $romzip -x -o "./"
     dzfile=`ls -l | grep ".*.dz" | gawk '{ print $9 }'`
     python $dz_extract -f $dzfile -i -o "./"
+    for partition in $PARTITIONS; do
+        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
+    done
+    rm -rf $tmpdir
     exit 0
 fi
 
