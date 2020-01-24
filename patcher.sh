@@ -11,6 +11,11 @@ usage() {
 
 LOCALDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TOOLSDIR="$LOCALDIR/tools"
+if [[ ! -d "$TOOLSDIR/update_payload_extractor" ]]; then
+    git clone -q https://github.com/erfanoabdi/update_payload_extractor.git "$TOOLSDIR/update_payload_extractor"
+else
+    git -C "$TOOLSDIR/update_payload_extractor" pull
+fi
 PAYLOAD_EXTRACTOR="$TOOLSDIR/update_payload_extractor/extract.py"
 VERBOSE=n
 OUTDIR="$LOCALDIR/out"
