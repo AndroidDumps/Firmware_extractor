@@ -19,6 +19,26 @@
 # kdz
 # RUU
 
+superimage() {
+    if [ -f super.img ]; then
+        echo "Creating super.img.raw ..."
+        $simg2img super.img super.img.raw 2>/dev/null
+    fi
+    if [[ ! -s super.img.raw ]] && [ -f super.img ]; then
+        mv super.img super.img.raw
+    fi
+    for partition in $PARTITIONS; do
+        ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
+        if [ -f "$partition"_a.img ]; then
+            mv "$partition"_a.img "$partition".img
+        else
+            foundpartitions=$(7z l -ba $romzip | rev | gawk '{ print $1 }' | rev | grep $partition.img)
+            7z e -y $romzip $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
+        fi
+    done
+    rm -rf super.img.raw
+}
+
 usage() {
     echo "Usage: $0 <Path to firmware> [Output Dir]"
     echo -e "\tPath to firmware: the zip!"
@@ -298,23 +318,7 @@ elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
         $simg2img $(echo "$superchunk" | tr '\n' ' ') super.img.raw 2>/dev/null
         rm -rf *super*chunk*
     fi
-    if [ -f super.img ]; then
-        $simg2img super.img super.img.raw 2>/dev/null
-    fi
-    if [[ ! -s super.img.raw ]] && [ -f super.img ]; then
-        mv super.img super.img.raw
-    fi
-
-    for partition in $PARTITIONS; do
-        ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
-        if [ -f "$partition"_a.img ]; then
-            mv "$partition"_a.img "$partition".img
-        else
-            foundpartitions=$(7z l -ba $romzip | gawk '{ print $NF }' | grep $partition.img)
-            7z e -y $romzip $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
-        fi
-    done
-    rm -rf super.img.raw
+    superimage
 elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
     echo "AP tarmd5 detected"
     mainmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_)
@@ -343,6 +347,15 @@ elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]];
             done
         done
     done
+    if [[ -e "$tmpdir/super.img.lz4" ]]; then
+        echo "Extracting super.img.lz4"
+        lz4_list=`find "$tmpdir" -type f -name "*.lz4" -printf '%P\n' | sort`
+        for file in $lz4_list; do
+            [[ ! -e "$(  echo "$file" | sed "s|.lz4||1" )" ]] && unlz4 "$tmpdir/$file"
+        done
+        find $tmpdir/ -type f -name "*.lz4" -exec rm -rf {} \;
+        superimage
+    fi
     if [[ -f system.img ]]; then
         rm -rf $mainmd5
         rm -rf $cscmd5
