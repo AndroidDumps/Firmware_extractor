@@ -322,7 +322,12 @@ elif [[ $(7z l -ba $romzip | grep "system-sign.img") ]]; then
         else # header with BFBF magic or another unknowed header 
             dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
         fi
-        $simg2img "$tmpdir/x.img" "$tmpdir/$file" > /dev/null 2>&1
+        MAGIC=$(od -A n -X -j 0 -N 4 "$tmpdir/x.img" | sed 's/ //g')
+        if [[ $MAGIC == "ed26ff3a" ]]; then
+            $simg2img "$tmpdir/x.img" "$tmpdir/$file" > /dev/null 2>&1
+        else
+            mv "$tmpdir/x.img" "$tmpdir/$file"
+        fi
     done
     romzip=""
 elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
