@@ -15,6 +15,7 @@
 # bin images
 # pac
 # sign images
+# sign auth DA images
 # nb0
 # kdz
 # RUU
@@ -305,7 +306,22 @@ elif [[ $(7z l -ba $romzip | grep "system-sign.img") ]]; then
     sign_list=`find "$tmpdir" -maxdepth 1 -type f -name "*.img" -printf '%P\n' | sort`
     for file in $sign_list; do
         rm -rf "$tmpdir/x.img"
-        dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
+        MAGIC=$(head -c4 "$tmpdir/$file" | tr -d '\0')
+        if [[ $MAGIC == "SSSS" ]]
+        then
+            echo Cleaning $file with SSSS header
+            # This is for little_endian arch
+            offset_low=$(od -A n -x -j 60 -N 2 "$tmpdir/$file" | sed 's/ //g')
+            offset_high=$(od -A n -x -j 62 -N 2 "$tmpdir/$file" | sed 's/ //g')
+            offset_low=0x${offset_low:0-4}
+            offset_high=0x${offset_high:0-4}
+            offset_low=$(printf "%d" $offset_low)
+            offset_high=$(printf "%d" $offset_high)
+            offset=$((65536*${offset_high}+${offset_low}))
+            dd if="$tmpdir/$file" of="$tmpdir/x.img" iflag=count_bytes,skip_bytes bs=8192 skip=64 count=$offset > /dev/null 2>&1
+        else # header with BFBF magic or another unknowed header 
+            dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
+        fi
         $simg2img "$tmpdir/x.img" "$tmpdir/$file" > /dev/null 2>&1
     done
     romzip=""
