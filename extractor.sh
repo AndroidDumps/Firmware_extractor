@@ -106,7 +106,7 @@ MAGIC=$(head -c12 $romzip | tr -d '\0')
 if [[ $MAGIC == "OPPOENCRYPT!" ]] || [[ "$romzipext" == "ozip" ]]; then
     echo "ozip detected"
     cp $romzip "$tmpdir/temp.ozip"
-    python $ozipdecrypt "$tmpdir/temp.ozip"
+    python3 $ozipdecrypt "$tmpdir/temp.ozip"
     if [[ -d "$tmpdir/out" ]]; then
         7z a -r "$tmpdir/temp.zip" "$tmpdir/out/*"
     fi
