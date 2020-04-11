@@ -298,11 +298,13 @@ elif [[ $(7z l -ba $romzip | grep "system-p") ]]; then
 elif [[ $(7z l -ba $romzip | grep "system-sign.img") ]]; then
     echo "sign images detected"
     7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
+    for partition in $PARTITIONS; do
+        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
+    done
     find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1 # removes space from file name
     find $tmpdir/ -mindepth 2 -type f -name "*-sign.img" -exec mv {} . \; # move .img in sub-dir to $tmpdir
     find $tmpdir/ -type f ! -name "*-sign.img" -exec rm -rf {} \; # delete other files
     find "$tmpdir" -maxdepth 1 -type f -name "*-sign.img" | rename 's/-sign.img/.img/g' > /dev/null 2>&1 # proper .img names
-    mv "$tmpdir/boot.img" "$outdir/boot.img"
     sign_list=`find "$tmpdir" -maxdepth 1 -type f -name "*.img" -printf '%P\n' | sort`
     for file in $sign_list; do
         rm -rf "$tmpdir/x.img"
