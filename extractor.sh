@@ -348,20 +348,19 @@ elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]];
     7z e -y $romzip 2>/dev/null >> $tmpdir/zip.log
     echo "Extracting images..."
     for i in $(ls *.tar.md5); do
-        tar -xf $i
-        rm -fv $i
+        tar -xf $i || exit 1
+        rm -fv $i || exit 1
+        echo "Extracted $i"
     done
     for f in $(ls *.lz4); do
-        unlz4 -q $f
-        rm -fv $f
+        unlz4 -q $f || exit 1
+        rm -fv $f || exit 1
+        echo "Extracted $f"
     done
     if [[ -f super.img ]]; then
         superimage
     fi
-    if [[ -f system.img ]]; then
-        rm -rf $mainmd5
-        rm -rf $cscmd5
-    else
+    if [[ ! -f system.img ]]; then
         echo "Extract failed"
         rm -rf "$tmpdir"
         exit 1
