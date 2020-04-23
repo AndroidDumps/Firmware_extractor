@@ -342,39 +342,18 @@ elif [[ $(7z l -ba $romzip | grep "super.img") ]]; then
     superimage
 elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
     echo "AP tarmd5 detected"
-    mainmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_)
-    cscmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep CSC_)
     echo "Extracting tarmd5"
-    7z e -y $romzip $mainmd5 $cscmd5 2>/dev/null >> $tmpdir/zip.log
-    mainmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_ | sed 's|.*/||')
-    cscmd5=$(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep CSC_ | sed 's|.*/||')
+    7z e -y $romzip 2>/dev/null >> $tmpdir/zip.log
     echo "Extracting images..."
-    for i in "$mainmd5" "$cscmd5"; do
-        if [ ! -f "$i" ]; then
-            continue
-        fi
-        for partition in $PARTITIONS; do
-            tarulist=$(tar -tf $i | grep -e ".*$partition.*\.img.*\|.*$partition.*ext4")
-            echo "$tarulist" | while read line; do
-                tar -xf "$i" "$line"
-                if [[ $(echo "$line" | grep "\.lz4") ]]; then
-                    unlz4 -f -q "$line" "$partition.img"
-                    rm -f "$line"
-                    line=$(echo "$line" | sed 's/\.lz4$//')
-                fi
-                if [[ $(echo "$line" | grep "\.ext4") ]]; then
-                    mv "$line" "$(echo "$line" | cut -d'.' -f1).img"
-                fi
-            done
-        done
+    for i in $(ls *.tar.md5); do
+        tar -xf $i
+        rm -fv $i
     done
-    if [[ -e "$tmpdir/super.img.lz4" ]]; then
-        echo "Extracting super.img.lz4"
-        lz4_list=`find "$tmpdir" -type f -name "*.lz4" -printf '%P\n' | sort`
-        for file in $lz4_list; do
-            [[ ! -e "$(  echo "$file" | sed "s|.lz4||1" )" ]] && unlz4 "$tmpdir/$file"
-        done
-        find $tmpdir/ -type f -name "*.lz4" -exec rm -rf {} \;
+    for f in $(ls *.lz4); do
+        unlz4 -q $f
+        rm -fv $f
+    done
+    if [[ -f super.img ]]; then
         superimage
     fi
     if [[ -f system.img ]]; then
