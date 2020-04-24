@@ -353,7 +353,7 @@ elif [[ $(7z l -ba $romzip | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]];
         echo "Extracted $i"
     done
     for f in $(ls *.lz4); do
-        unlz4 -q $f || exit 1
+        lz4 -dc $f > ${f/.lz4/} || exit 1
         rm -fv $f || exit 1
         echo "Extracted $f"
     done
