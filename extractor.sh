@@ -375,7 +375,7 @@ elif [[ $(7z l -ba $romzip | grep .tar) && ! $(7z l -ba $romzip | grep tar.md5 |
 elif [[ $(7z l -ba $romzip | grep payload.bin) ]]; then
     echo "AB OTA detected"
     7z e -y $romzip payload.bin 2>/dev/null >> $tmpdir/zip.log
-    python "$LOCALDIR/tools/extract_android_ota_payload/extract_android_ota_payload.py" payload.bin $tmpdir
+    python3 "$LOCALDIR/tools/extract_android_ota_payload/extract_android_ota_payload.py" payload.bin $tmpdir
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
