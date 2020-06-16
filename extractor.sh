@@ -272,7 +272,7 @@ elif [[ $(7z l -ba $romzip | grep "system.sin\|.*system_.*\.sin") ]]; then
     $unsin -d $tmpdir
     find "$tmpdir" -maxdepth 1 -type f -name "*.ext4" | rename 's/.ext4/.img/g' > /dev/null 2>&1 # proper names
     romzip=""
-elif [[ $(7z l -ba $romzip | grep ".*.pac") ]]; then
+elif [[ $(7z l -ba $romzip | grep ".pac$") ]]; then
     echo "pac detected"
     7z x -y $romzip 2>/dev/null >> $tmpdir/zip.log
     find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
