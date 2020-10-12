@@ -118,7 +118,7 @@ if [[ $(echo "$romzip" | grep kdz) ]]; then
     echo "KDZ detected"
     python $kdz_extract -f "$romzip" -x -o "./"
     dzfile=`ls -l | grep ".*.dz" | gawk '{ print $9 }'`
-    python $dz_extract -f $dzfile -i -o "./"
+    python3 $dz_extract -f $dzfile -i -o "./"
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
