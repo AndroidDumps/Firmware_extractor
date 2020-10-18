@@ -54,6 +54,9 @@ fi
 
 LOCALDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 HOST="$(uname)"
+if [[ "$(uname)" == *CYGWIN* ]]; then
+    HOST=Windows
+fi
 toolsdir="$LOCALDIR/tools"
 
 if [[ ! -d "$toolsdir/extract_android_ota_payload" ]]; then
