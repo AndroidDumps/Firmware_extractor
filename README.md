@@ -16,6 +16,13 @@ pip install backports.lzma protobuf pycrypto
 ```
 Also install [mono](https://www.mono-project.com/docs/getting-started/install/mac/)  
 
+### Windows
+Install cygwin, and select
+
+```Latest python and pip packages, arj, brotli, cabextract, dos2unix, lz4, p7zip, renameutils, sharutils, unace, unzip and zip```
+
+If you get syntax errors run dos2unix on extractor.sh
+
 ## How to use
 ### Download
 ```
