@@ -18,6 +18,7 @@ Copyright (C) 2013 IOMonster (thecubed on XDA)
         along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
@@ -87,8 +88,6 @@ class UNDZUtils(object):
                 # To my knowledge this is supposed to be blank (for now...)
                 if len(dz_item['pad']) != 0:
                         print("[!] Warning: pad is not empty", file=sys.stderr)
-                        print("[!] pad contains: " + dz_item['pad'].decode(), file=sys.stderr)
-
 
                 return dz_item
 
@@ -252,8 +251,8 @@ class UNDZChunk(dz.DZChunk, UNDZUtils):
                 enough.
                 """
 
-                #if name:
-                #        print("[+] Extracting {:s} to {:s}".format(self.chunkName.decode("utf8"), name))
+                if name:
+                        print("[+] Extracting {:s} to {:s}".format(self.chunkName.decode("utf8"), name))
 
                 # Create a hole at the end of the wipe area
                 if file:
@@ -438,6 +437,7 @@ class UNDZSlice(object):
                 """
                 Extract the whole slice to the FileIO file named name
                 """
+
                 start = self.getStart()
                 end = self.getEnd()
 
@@ -461,6 +461,31 @@ class UNDZSlice(object):
                 if self.getLength() >= 0:
                         file.truncate(self.getLength())
 
+
+                # write a params file for saving values used during recreate
+                params = io.open(name + ".params", "wt")
+                params.write(u'# saved parameters for the file "{:s}"\n'.format(name))
+                params.write(u"startLBA={:d}\n".format(start >> self.dz.shiftLBA))
+                params.write(u"startAddr={:d}\n".format(start))
+                params.write(u"endLBA={:d}\n".format(end >> self.dz.shiftLBA))
+                params.write(u"endAddr={:d}\n".format(end))
+                params.write(u"# this value may be crucial for success and dangerous to modify\n")
+
+                if len(self.chunks) > 0:
+                        last = self.chunks[-1]
+                        params.write(u"lastWipe={:d}\n".format((last.getTargetStart() >> self.dz.shiftLBA) + last.trimCount))
+                        params.write(u"# Indicates which flash device this should be written in\n")
+                        params.write(u"dev={:d}\n".format(self.chunks[0].getDev()))
+                        params.write(u"# the block size is important!\n")
+                        params.write(u"blockSize={:d}\n".format(1<<self.dz.shiftLBA))
+                        params.write(u"blockShift={:d}\n".format(self.dz.shiftLBA))
+                else:
+                        params.write(u"phantom=1\n")
+                        params.write(u"# this is a phantom slice, no writes are done\n")
+                        params.write(u"# (though it could be getting wiped)\n")
+
+                params.close()
+
         def __init__(self, dz, index, name, start=0x7FFFFFFFFFFFFFFF, end=0):
                 """
                 Initialize the instance of UNDZSlice class
@@ -477,6 +502,7 @@ class UNDZSlice(object):
                 # Save a pointer to the UNDZFile
                 self.dz = dz
                 self.index = index
+
 
 
 class UNDZFile(dz.DZFile, UNDZUtils):
@@ -507,6 +533,18 @@ class UNDZFile(dz.DZFile, UNDZUtils):
 
                 # Save the full header for rebuilding the file later
                 self.header = dz_file['buffer']
+
+                #print(dz_file['version'])
+                #print(dz_file['buildType'])
+                #print(dz_file['oldDateCode'])
+                #print(dz_file['chunkCount'])
+                #print(dz_file['md5'])
+                #print(dz_file['unknown0'])
+                #print(dz_file['reserved1'])
+                #print(dz_file['reserved4'])
+                #print(dz_file['unknown1'])
+                #print(dz_file['unknown2'])
+                #print(self.header)
 
                 # Appears to be version numbers for the format
                 if dz_file['formatMajor'] > 2:
@@ -792,14 +830,12 @@ class UNDZFile(dz.DZFile, UNDZUtils):
                 """
                 Extract the whole file to an image file named name
                 """
-                for slice in self.slices:
-                        if "_b" in slice.getSliceName():
-                            continue
-                        name = slice.getSliceName() + ".img"
-                        if "_a" in slice.getSliceName():
-                            name = slice.getSliceName().split("_a")[0] + ".img"
-                        file = io.FileIO(name, "wb")
-                        slice.extractSlice(file, name)
+
+                # the slice extraction has gotten preoccupied with slices
+                for chunk in self.chunks:
+                        file.seek(chunk.getTargetStart(), io.SEEK_SET)
+                        chunk.extractChunk(file, name)
+
 
         def saveHeader(self, name):
                 """

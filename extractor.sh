@@ -85,8 +85,8 @@ lpunpack="$toolsdir/$HOST/bin/lpunpack"
 splituapp="$toolsdir/splituapp"
 pacextractor="$toolsdir/$HOST/bin/pacextractor"
 nb0_extract="$toolsdir/$HOST/bin/nb0-extract"
-kdz_extract="$toolsdir/KDZFileTools.py"
-dz_extract="$toolsdir/undz.py"
+kdz_extract="$toolsdir/kdztools/unkdz.py"
+dz_extract="$toolsdir/kdztools/undz.py"
 ruu="$toolsdir/$HOST/bin/RUU_Decrypt_Tool"
 
 romzip="$(realpath $1)"
@@ -119,9 +119,12 @@ fi
 
 if [[ $(echo "$romzip" | grep kdz) ]]; then
     echo "KDZ detected"
-    python $kdz_extract -f "$romzip" -x -o "./"
+    python3 $kdz_extract -f "$romzip" -x -o "./"
     dzfile=`ls -l | grep ".*.dz" | gawk '{ print $9 }'`
-    python3 $dz_extract -f $dzfile -i -o "./"
+    python3 $dz_extract -f $dzfile -s -o "./"
+    # Some known dz-partitions "gpt_main persist misc metadata vendor system system_other product userdata gpt_backup tz boot dtbo vbmeta cust oem odm factory modem NON-HLOS"
+    find . -maxdepth 1 -type f -name "*.image" | rename 's/.image/.img/g' > /dev/null 2>&1
+    find . -maxdepth 1 -type f -name "*_a.img" | rename 's/_a.img/.img/g' > /dev/null 2>&1
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
