@@ -26,7 +26,7 @@ If you get syntax errors run dos2unix on extractor.sh
 ## How to use
 ### Download
 ```
-git clone --recurse-submodules https://github.com/erfanoabdi/Firmware_extractor.git
+git clone --recurse-submodules https://github.com/AndroidDumps/Firmware_extractor.git
 ```
 
 ### Extract images from firmware URL
