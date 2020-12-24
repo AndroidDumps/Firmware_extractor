@@ -347,6 +347,9 @@ elif [[ $(7z l -ba "$romzip" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]
     if [[ -f super.img ]]; then
         superimage
     fi
+    if [[ -f system.img.ext4 ]]; then
+        find "$tmpdir" -maxdepth 1 -type f -name "*.img.ext4" | rename 's/.img.ext4/.img/g' > /dev/null 2>&1
+    fi
     if [[ ! -f system.img ]]; then
         echo "Extract failed"
         rm -rf "$tmpdir"
