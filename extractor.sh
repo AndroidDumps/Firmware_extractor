@@ -19,6 +19,7 @@
 # nb0
 # kdz
 # RUU
+# Amlogic upgrade package
 
 superimage() {
     if [ -f super.img ]; then
@@ -88,10 +89,11 @@ nb0_extract="$toolsdir/$HOST/bin/nb0-extract"
 kdz_extract="$toolsdir/kdztools/unkdz.py"
 dz_extract="$toolsdir/kdztools/undz.py"
 ruu="$toolsdir/$HOST/bin/RUU_Decrypt_Tool"
+aml_extract="$toolsdir/aml-upgrade-package-extract"
 
 romzip="$(realpath $1)"
 romzipext="${romzip##*.}"
-PARTITIONS="system vendor cust odm oem factory product xrom modem dtbo boot recovery tz systemex oppo_product preload_common system_ext system_other opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap"
+PARTITIONS="system vendor cust odm oem factory product xrom modem dtbo dtb boot recovery tz systemex oppo_product preload_common system_ext system_other opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap"
 EXT4PARTITIONS="system vendor cust odm oem factory product xrom systemex oppo_product preload_common"
 OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem NON-HLOS:modem boot-verified.img:boot dtbo-verified.img:dtbo"
 
@@ -139,6 +141,25 @@ if [[ $(echo "$romzip" | grep -i ruu_ | grep -i exe) ]]; then
     $ruu -s "$romzip" 2>/dev/null
     $ruu -f "$romzip" 2>/dev/null
     find "$tmpdir/OUT"* -name *.img -exec mv {} $tmpdir \;
+    for partition in $PARTITIONS; do
+        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
+    done
+    rm -rf $tmpdir
+    exit 0
+fi
+
+if [[ $(7z l -ba "$romzip" | grep -i aml) ]]; then
+    echo "aml detected"
+    cp "$romzip" $tmpdir
+    romzip="$tmpdir/$(basename $romzip)"
+    7z e -y "$romzip" >> $tmpdir/zip.log
+    $aml_extract $(find . -type f -name "*aml*.img")
+    rename 's/.PARTITION$/.img/' *.PARTITION
+    rename 's/_aml_dtb.img$/dtb.img/' *.img
+    rename 's/_a.img/.img/' *.img
+    if [[ -f super.img ]]; then
+        superimage
+    fi
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
