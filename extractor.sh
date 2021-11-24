@@ -311,6 +311,12 @@ elif [[ $(7z l -ba "$romzip" | grep "system.sin\|.*system_.*\.sin") ]]; then
     find "$tmpdir" -maxdepth 1 -type f -name "*_$to_remove.sin" | rename 's/_'$to_remove'.sin/.sin/g' > /dev/null 2>&1 # proper names
     $unsin -d $tmpdir
     find "$tmpdir" -maxdepth 1 -type f -name "*.ext4" | rename 's/.ext4/.img/g' > /dev/null 2>&1 # proper names
+    foundsuperinsin=$(find "$tmpdir" -maxdepth 1 -type f -name "super_*.img")
+    if [ ! -z $foundsuperinsin ]; then
+        mv $(ls $tmpdir/super_*.img) "$tmpdir/super.img"
+        echo "super image inside a sin detected"
+        superimage
+    fi
     romzip=""
 elif [[ $(7z l -ba "$romzip" | grep ".pac$") ]]; then
     echo "pac detected"
