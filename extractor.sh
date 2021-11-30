@@ -250,6 +250,16 @@ elif [[ $(7z l -ba "$romzip" | grep system | grep chunk | grep -v ".*\.so$") ]];
             fi
         fi
     done
+elif [[ $(7z l -ba "$romzip" | grep "super.img") ]]; then
+    echo "super detected"
+    foundsupers=$(7z l -ba "$romzip" | gawk '{ print $NF }' | grep "super.img")
+    7z e -y "$romzip" $foundsupers dummypartition 2>/dev/null >> $tmpdir/zip.log
+    superchunk=$(ls | grep chunk | grep super | sort)
+    if [[ $(echo "$superchunk" | grep "sparsechunk") ]]; then
+        $simg2img $(echo "$superchunk" | tr '\n' ' ') super.img.raw 2>/dev/null
+        rm -rf *super*chunk*
+    fi
+    superimage
 elif [[ $(7z l -ba "$romzip" | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img\|\/system_image.emmc.img\|^system_image.emmc.img") ]]; then
     echo "Image detected"
     7z x -y "$romzip" 2>/dev/null >> $tmpdir/zip.log
@@ -340,16 +350,6 @@ elif [[ $(7z l -ba "$romzip" | grep "system-sign.img") ]]; then
         fi
     done
     romzip=""
-elif [[ $(7z l -ba "$romzip" | grep "super.img") ]]; then
-    echo "super detected"
-    foundsupers=$(7z l -ba "$romzip" | gawk '{ print $NF }' | grep "super.img")
-    7z e -y "$romzip" $foundsupers dummypartition 2>/dev/null >> $tmpdir/zip.log
-    superchunk=$(ls | grep chunk | grep super | sort)
-    if [[ $(echo "$superchunk" | grep "sparsechunk") ]]; then
-        $simg2img $(echo "$superchunk" | tr '\n' ' ') super.img.raw 2>/dev/null
-        rm -rf *super*chunk*
-    fi
-    superimage
 elif [[ $(7z l -ba "$romzip" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
     echo "AP tarmd5 detected"
     echo "Extracting tarmd5"
