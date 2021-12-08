@@ -240,6 +240,9 @@ elif [[ $(7z l -ba "$romzip" | grep rawprogram) ]]; then
             fi
         fi
     done
+    if [[ -f super.img ]]; then
+        superimage
+    fi
 elif [[ $(7z l -ba "$romzip" | grep nb0) ]]; then
     echo "nb0 detected"
     to_extract=`7z l "$romzip" | grep ".*.nb0" | gawk '{ print $6 }'`
