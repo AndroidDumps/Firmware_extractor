@@ -326,6 +326,10 @@ elif [[ $(7z l -ba "$romzip" | grep ".pac$") ]]; then
     for file in $pac_list; do
        $pacextractor $file
     done
+    if [[ -f super.img ]]; then
+        superimage
+    fi
+
 elif [[ $(7z l -ba "$romzip" | grep "system.bin") ]]; then
     echo "bin images detected"
     7z x -y "$romzip" 2>/dev/null >> $tmpdir/zip.log
