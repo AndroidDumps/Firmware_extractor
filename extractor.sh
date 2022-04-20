@@ -38,7 +38,8 @@ superimage() {
             7z e -y "$romzip" $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
         fi
     done
-    rm -rf super.img.raw
+    rm -rf super.img*
+    
 }
 
 usage() {
