@@ -39,7 +39,6 @@ superimage() {
         fi
     done
     rm -rf super.img*
-    
 }
 
 usage() {
@@ -85,7 +84,7 @@ sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 lpunpack="$toolsdir/$HOST/bin/lpunpack"
 splituapp="$toolsdir/splituapp"
-pacextractor="$toolsdir/$HOST/bin/pacextractor"
+pacextractor="$toolsdir/pacExtractor.py"
 nb0_extract="$toolsdir/$HOST/bin/nb0-extract"
 kdz_extract="$toolsdir/kdztools/unkdz.py"
 dz_extract="$toolsdir/kdztools/undz.py"
@@ -332,12 +331,11 @@ elif [[ $(7z l -ba "$romzip" | grep ".pac$") ]]; then
     find $tmpdir/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
     pac_list=`find $tmpdir/ -type f -name "*.pac" -printf '%P\n' | sort`
     for file in $pac_list; do
-       $pacextractor $file
+        python3 $pacextractor $file $PWD
     done
     if [[ -f super.img ]]; then
         superimage
     fi
-
 elif [[ $(7z l -ba "$romzip" | grep "system.bin") ]]; then
     echo "bin images detected"
     7z x -y "$romzip" 2>/dev/null >> $tmpdir/zip.log
