@@ -86,8 +86,7 @@ lpunpack="$toolsdir/$HOST/bin/lpunpack"
 splituapp="$toolsdir/splituapp"
 pacextractor="$toolsdir/pacExtractor.py"
 nb0_extract="$toolsdir/$HOST/bin/nb0-extract"
-kdz_extract="$toolsdir/kdztools/unkdz.py"
-dz_extract="$toolsdir/kdztools/undz.py"
+kdz_extract="$toolsdir/unkdz.py"
 ruu="$toolsdir/$HOST/bin/RUU_Decrypt_Tool"
 aml_extract="$toolsdir/aml-upgrade-package-extract"
 
@@ -121,15 +120,12 @@ fi
 
 if [[ $(echo "$romzip" | grep kdz) ]]; then
     echo "KDZ detected"
-    python3 $kdz_extract -f "$romzip" -x -o "./"
-    dzfile=`ls *.dz`
-    python3 $dz_extract -f $dzfile -s -o "./"
-    # Some known dz-partitions "gpt_main persist misc metadata vendor system system_other product userdata gpt_backup tz boot dtbo vbmeta cust oem odm factory modem NON-HLOS"
-    find . -maxdepth 4 -type f -name "*.image" | rename 's/.image/.img/g' > /dev/null 2>&1
-    find . -maxdepth 4 -type f -name "*_a.img" | rename 's/_a.img/.img/g' > /dev/null 2>&1
-    for partition in $PARTITIONS; do
-        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
-    done
+    python3 $kdz_extract -e "./" "$romzip" >> /dev/null
+	rm -rf *GPT*
+	for i in $(ls | cut -d "." -f 2,3)
+	do
+		mv *"${i}" "$outdir"/"${i}"
+	done
     rm -rf $tmpdir
     exit 0
 fi
