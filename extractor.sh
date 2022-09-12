@@ -20,6 +20,7 @@
 # kdz
 # RUU
 # Amlogic upgrade package
+# Rockchip upgrade package
 
 superimage() {
     if [ -f super.img ]; then
@@ -33,7 +34,7 @@ superimage() {
         ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
         if [ -f "$partition"_a.img ]; then
             mv "$partition"_a.img "$partition".img
-        else
+        elif [ -f "$romzip" ]; then
             foundpartitions=$(7z l -ba "$romzip" | rev | gawk '{ print $1 }' | rev | grep $partition.img)
             7z e -y "$romzip" $foundpartitions dummypartition 2>/dev/null >> $tmpdir/zip.log
         fi
@@ -86,6 +87,8 @@ kdz_extract="$toolsdir/kdztools/unkdz.py"
 dz_extract="$toolsdir/kdztools/undz.py"
 ruu="$toolsdir/$HOST/bin/RUU_Decrypt_Tool"
 aml_extract="$toolsdir/aml-upgrade-package-extract"
+afptool_extract="$toolsdir/$HOST/bin/afptool"
+rk_extract="$toolsdir/$HOST/bin/rkImageMaker"
 
 romzip="$(realpath $1)"
 romzipext="${romzip##*.}"
@@ -138,6 +141,26 @@ if [[ $(echo "$romzip" | grep -i ruu_ | grep -i exe) ]]; then
     $ruu -f "$romzip" 2>/dev/null
     find "$tmpdir/OUT"* -name *.img -exec mv {} $tmpdir \;
     for partition in $PARTITIONS; do
+        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
+    done
+    rm -rf $tmpdir
+    exit 0
+fi
+
+if grep -q "rockchip" $romzip; then
+    echo "Rockchip detected"
+    cp "$romzip" $tmpdir
+    romzip="$tmpdir/$(basename $romzip)"
+    $rk_extract -unpack "$romzip" $tmpdir
+    $afptool_extract -unpack $tmpdir/firmware.img $tmpdir
+    rm $romzip
+    romzip=""
+    if [[ -f $tmpdir/Image/super.img ]]; then
+        mv "$tmpdir/Image/super.img" "$tmpdir/super.img"
+        superimage
+    fi
+    for partition in $PARTITIONS; do
+        [[ -e "$tmpdir/Image/$partition.img" ]] && mv "$tmpdir/Image/$partition.img" "$outdir/$partition.img"
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
     rm -rf $tmpdir
