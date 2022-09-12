@@ -20,6 +20,7 @@
 # kdz
 # RUU
 # Amlogic upgrade package
+# Rockchip upgrade package
 
 superimage() {
     if [ -f super.img ]; then
@@ -33,7 +34,7 @@ superimage() {
         ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
         if [ -f "$partition"_a.img ]; then
             mv "$partition"_a.img "$partition".img
-        else
+        elif [ -f "$romzip" ]; then
             foundpartitions=$(7z l -ba "${romzip}" | rev | gawk '{ print $1 }' | rev | grep "$partition".img)
             7z e -y "${romzip}" "$foundpartitions" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
         fi
@@ -85,6 +86,8 @@ dz_extract="$toolsdir/undz.py"
 ruu="$toolsdir/RUU_Decrypt_Tool"
 aml_extract="$toolsdir/aml-upgrade-package-extract"
 star="$toolsdir/star"
+afptool_extract="$toolsdir/afptool"
+rk_extract="$toolsdir/rkImageMaker"
 
 romzip="$(realpath "$1")"
 romzipext="${romzip}##*.}"
@@ -182,6 +185,44 @@ if [[ $(echo "${romzip}" | grep -i ruu_ | grep -i exe) ]]; then
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "${outdir}/$partition.img"
     done
     rm -rf "$tmpdir"
+    exit 0
+fi
+
+if grep -q "rockchip" "${romzip}"; then
+    echo "[INFO] Detected rockchip archive"
+
+    # Start the extraction of partition
+    ## Logical
+    echo "[INFO] Extracting partitions with 'rkImageMaker'..."
+    "${rk_extract}" -unpack "${romzip}" "${tmpdir}" > /dev/null || {
+        echo "[ERROR] Extraction with 'rkImageMaker' failed."
+        exit 1
+    }
+
+    ## Firmware
+    echo "[INFO] Extracting partitions with 'afptool'..."
+    "${afptool_extract}" -unpack "${tmpdir}/firmware.img" "${tmpdir}" > /dev/null || {
+        echo "[ERROR] Extraction with 'afptool' failed." 
+        exit 1
+    }
+
+    # In case output was a 'super.img', execute 'superimage'
+    if [ -f "${tmpdir}/Image/super.img" ]; then
+        unset romzip
+        mv "${tmpdir}/Image/super.img" "${tmpdir}/super.img"
+        superimage
+    fi
+
+    # Move everything to the '${outdir}' directory
+    for p in $PARTITIONS; do
+        [ -e "${tmpdir}/Image/${p}.img" ] && \
+            mv "${tmpdir}/Image/${p}.img" "${outdir}/${p}.img"
+        [ -e "${tmpdir}/${p}.img" ] && \
+            mv "${tmpdir}/${p}.img" "${outdir}/${p}.img"
+    done
+
+    # Clean-up and exit
+    rm -rf "${tmpdir}"
     exit 0
 fi
 
