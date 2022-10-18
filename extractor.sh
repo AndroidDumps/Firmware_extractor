@@ -123,6 +123,9 @@ if [[ $(echo "$romzip" | grep kdz) ]]; then
     # Some known dz-partitions "gpt_main persist misc metadata vendor system system_other product userdata gpt_backup tz boot dtbo vbmeta cust oem odm factory modem NON-HLOS"
     find . -maxdepth 4 -type f -name "*.image" | rename 's/.image/.img/g' > /dev/null 2>&1
     find . -maxdepth 4 -type f -name "*_a.img" | rename 's/_a.img/.img/g' > /dev/null 2>&1
+    if [[ -f super.img ]]; then
+        superimage
+    fi
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
