@@ -7,7 +7,7 @@
 ```
 apt install unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract rename
 apt install liblzma-dev python-pip brotli lz4
-pip install backports.lzma protobuf pycrypto twrpdtgen extract-dtb
+pip install backports.lzma protobuf pycrypto twrpdtgen extract-dtb pycryptodome
 ```
 ### Mac
 ```
