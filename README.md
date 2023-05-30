@@ -5,8 +5,7 @@
 - lz4
 ### Linux
 ```
-apt install unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract rename
-apt install liblzma-dev python-pip brotli lz4
+apt install unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract rename liblzma-dev python-pip brotli lz4 protobuf-compiler
 pip install backports.lzma protobuf pycrypto twrpdtgen extract-dtb pycryptodome
 ```
 ### Mac
@@ -22,6 +21,12 @@ Install cygwin, and select
 ```Latest python and pip packages, arj, brotli, cabextract, dos2unix, lz4, p7zip, renameutils, sharutils, unace, unzip and zip```
 
 If you get syntax errors run dos2unix on extractor.sh
+
+
+### Misc
+
+- Install rust using https://rustup.rs/
+- Run `cargo install otadump`
 
 ## How to use
 ### Download
