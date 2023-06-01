@@ -75,6 +75,7 @@ simg2img="$toolsdir/$HOST/bin/simg2img"
 packsparseimg="$toolsdir/$HOST/bin/packsparseimg"
 unsin="$toolsdir/$HOST/bin/unsin"
 payload_extractor="$toolsdir/update_payload_extractor/extract.py"
+payload_go="$toolsdir/$HOST/bin/payload-dumper-go"
 sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 lpunpack="$toolsdir/$HOST/bin/lpunpack"
@@ -422,11 +423,11 @@ elif [[ $(7z l -ba "$romzip" | grep .tar) && ! $(7z l -ba "$romzip" | grep tar.m
 elif [[ $(7z l -ba "$romzip" | grep payload.bin) ]]; then
     echo "AB OTA detected"
     7z e -y "$romzip" payload.bin 2>/dev/null >> $tmpdir/zip.log
-    otadump -o $tmpdir payload.bin
+    otadump -o $tmpdir payload.bin || $payload_go -o $tmpdir $romzip
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
-    rm payload.bin
+    [[ -f "payload.bin" ]] && rm payload.bin
     rm -rf "$tmpdir"
     exit
 elif [[ $(7z l -ba "$romzip" | grep ".*.rar\|.*.zip") ]]; then
