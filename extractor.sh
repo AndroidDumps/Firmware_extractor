@@ -376,7 +376,7 @@ elif [[ $(7z l -ba "$romzip" | grep "system-sign.img") ]]; then
             offset_high=$(printf "%d" $offset_high)
             offset=$((65536*${offset_high}+${offset_low}))
             dd if="$tmpdir/$file" of="$tmpdir/x.img" iflag=count_bytes,skip_bytes bs=8192 skip=64 count=$offset > /dev/null 2>&1
-        else # header with BFBF magic or another unknowed header 
+        else # header with BFBF magic or another unknowed header
             dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
         fi
         MAGIC=$(od -A n -X -j 0 -N 4 "$tmpdir/x.img" | sed 's/ //g')
@@ -422,10 +422,12 @@ elif [[ $(7z l -ba "$romzip" | grep .tar) && ! $(7z l -ba "$romzip" | grep tar.m
     exit
 elif [[ $(7z l -ba "$romzip" | grep payload.bin) ]]; then
     echo "AB OTA detected"
-    $payload_go -o $tmpdir $romzip
+    7z e -y "$romzip" payload.bin 2>/dev/null >> $tmpdir/zip.log
+    otadump -o $tmpdir payload.bin || $payload_go -o $tmpdir $romzip
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
+    [[ -f "payload.bin" ]] && rm payload.bin
     rm -rf "$tmpdir"
     exit
 elif [[ $(7z l -ba "$romzip" | grep ".*.rar\|.*.zip") ]]; then
