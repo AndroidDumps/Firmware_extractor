@@ -430,7 +430,7 @@ elif [[ $(7z l -ba "$romzip" | grep payload.bin) ]]; then
     [[ -f "payload.bin" ]] && rm payload.bin
     rm -rf "$tmpdir"
     exit
-elif [[ $(7z l -ba "$romzip" | grep ".*.rar\|.*.zip") ]]; then
+elif [[ $(7z l -ba "$romzip" | grep ".*.rar\|.*.zip" | tr -s ' ' | cut -d' ' -f4 | awk '$0>300M') ]]; then
     echo "Image zip firmware detected"
     mkdir -p $tmpdir/zipfiles
     7z e -y "$romzip" -o$tmpdir/zipfiles 2>/dev/null >> $tmpdir/zip.log
