@@ -235,6 +235,10 @@ elif [[ $(7z l -ba "$romzip" | grep rawprogram) ]]; then
         partitionsonzip=$(7z l -ba $romzip | gawk '{ print $NF }' | grep $partition)
         if [[ ! $partitionsonzip == "" ]]; then
             7z e -y $romzip $partitionsonzip 2>/dev/null >> $tmpdir/zip.log
+            if [[ -L "$partition.img" ]]; then
+                partitionlink=$(7z l -ba $romzip | gawk '{ print $NF }' | grep `readlink "$partition.img"`)
+                7z e -y $romzip $partitionlink -so > "$partition.img"
+            fi
             if [[ ! -f "$partition.img" ]]; then
                 if [[ -f "$partition.raw.img" ]]; then
                     mv "$partition.raw.img" "$partition.img"
