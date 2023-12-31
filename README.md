@@ -26,7 +26,8 @@ If you get syntax errors run dos2unix on extractor.sh
 ### Misc
 
 - Install rust using https://rustup.rs/
-- Run `cargo install otadump`
+- Run `git clone https://github.com/crazystylus/otadump` , `cd otadump/`, `cargo build --release`.
+- Navigate to `/target/release` and add the generated `otadump` executable to your PATH.
 
 ## How to use
 ### Download
