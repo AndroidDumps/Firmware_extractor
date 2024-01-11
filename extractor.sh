@@ -423,7 +423,10 @@ elif [[ $(7z l -ba "$romzip" | grep .tar) && ! $(7z l -ba "$romzip" | grep tar.m
 elif [[ $(7z l -ba "$romzip" | grep payload.bin) ]]; then
     echo "AB OTA detected"
     7z e -y "$romzip" payload.bin 2>/dev/null >> $tmpdir/zip.log
-    otadump -o $tmpdir payload.bin || $payload_go -o $tmpdir $romzip
+    [[ "$(command -v otadump)" ]] && {
+        otadump --list payload.bin
+        otadump -o $tmpdir payload.bin
+    } || $payload_go -o $tmpdir $romzip
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "$outdir/$partition.img"
     done
