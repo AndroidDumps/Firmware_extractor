@@ -1,0 +1,5 @@
+backports.lzma
+protobuf
+pycrypto
+twrpdtgen
+extract-dtb
