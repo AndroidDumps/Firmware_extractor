@@ -29,6 +29,10 @@ superimage() {
     if [[ ! -s super.img.raw ]] && [ -f super.img ]; then
         mv super.img super.img.raw
     fi
+    if [[ $(ls | grep "super.img" | wc -l) -gt 1 ]]; then
+        echo "Creating super.img.raw ..."
+        simg2img `ls | grep super.img | sort -V` super.img.raw
+    fi
     for partition in $PARTITIONS; do
         ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
         if [ -f "$partition"_a.img ]; then
