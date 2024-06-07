@@ -89,8 +89,8 @@ aml_extract="$toolsdir/aml-upgrade-package-extract"
 
 romzip="$(realpath $1)"
 romzipext="${romzip##*.}"
-PARTITIONS="super system vendor cust odm oem factory product xrom modem dtbo dtb boot recovery tz systemex oppo_product preload_common system_ext system_other opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region my_bigball my_version special_preload vendor_dlkm odm_dlkm system_dlkm init_boot vendor_kernel_boot vendor_boot mi_ext boot-debug vendor_boot-debug"
-EXT4PARTITIONS="system vendor cust odm oem factory product xrom systemex oppo_product preload_common"
+PARTITIONS="super system vendor cust odm oem factory product xrom modem dtbo dtb boot recovery tz systemex oppo_product preload_common system_ext system_other opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region my_bigball my_version special_preload vendor_dlkm odm_dlkm system_dlkm init_boot vendor_kernel_boot vendor_boot mi_ext boot-debug vendor_boot-debug hw_product product_h preas preavs"
+EXT4PARTITIONS="system vendor cust odm oem factory product xrom systemex oppo_product preload_common hw_product product_h preas preavs"
 OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem NON-HLOS:modem boot-verified.img:boot dtbo-verified.img:dtbo"
 
 echo "Create Temp and out dir"
@@ -446,12 +446,12 @@ elif [[ $(7z l -ba "$romzip" | grep ".*.rar\|.*.zip") ]]; then
 elif [[ $(7z l -ba "$romzip" | grep "UPDATE.APP") ]]; then
     echo "Huawei UPDATE.APP detected"
     7z x "$romzip" UPDATE.APP
-    python3 $splituapp -f "UPDATE.APP" -l super || (
+    python3 $splituapp -f "UPDATE.APP" -l super preas preavs || (
     for partition in $PARTITIONS; do
         python3 $splituapp -f "UPDATE.APP" -l ${partition/.img/} || echo "$partition not found in UPDATE.APP"
     done)
     if [ -f super.img ]; then
-        ($simg2img super.img super.img.raw || mv super.img super.img.raw) 2>/dev/null
+        ($simg2img super.img super_* super.img.raw || mv super.img super.img.raw) 2>/dev/null
 
         for partition in $PARTITIONS; do
             ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
