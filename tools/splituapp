@@ -47,7 +47,6 @@ bytenum = 4
 py2 = None
 if int(''.join(str(i) for i in sys.version_info[0:2])) < 30:
 	py2 = 1
- 
 with open(source, 'rb') as f:
 	while True:
 		i = f.read(bytenum)
@@ -81,8 +80,17 @@ with open(source, 'rb') as f:
 				imgdata = f.read(filesize)
 				try:
 					print('Extracting '+filename+'.img ...')
-					with open(filename+'.img', 'wb') as o:
-						o.write(imgdata)
+					if os.path.exists(filename + ".img"):
+						i = 1
+						while os.path.exists(filename+'_'+str(i)+'.img'):
+							i += 1
+						
+						with open(filename+'_'+str(i)+'.img', 'wb') as o:
+							o.write(imgdata)
+
+					else:
+						with open(filename+'.img', 'ab') as o:
+							o.write(imgdata)
 				except:
 					print('ERROR: Failed to create '+filename+'.img\n')
 					sys.exit(1)
