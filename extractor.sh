@@ -86,6 +86,7 @@ kdz_extract="$toolsdir/kdztools/unkdz.py"
 dz_extract="$toolsdir/kdztools/undz.py"
 ruu="$toolsdir/$HOST/bin/RUU_Decrypt_Tool"
 aml_extract="$toolsdir/aml-upgrade-package-extract"
+star="$toolsdir/$HOST/bin/star"
 
 romzip="$(realpath $1)"
 romzipext="${romzip##*.}"
@@ -498,6 +499,31 @@ for partition in $PARTITIONS; do
         rm "$outdir"/$partition.img
     fi
 done
+
+# Specifically check if input is 'radio.img'
+if $(7z l -ba "${romzip}" | grep -q radio.img); then
+    ## Extract 'radio.img' from archive'
+    echo "[INFO] Extracting 'radio.img'..."
+    7z x "${romzip}" radio.img -o${PWD} >> $tmpdir/zip.log
+
+    ## Check if this comes from motorola
+    if [[ $(head -c15 ${PWD}/radio.img) == "SINGLE_N_LONELY" ]]; then
+        ## Extract 'radio.img.sparse'
+        "${star}" "${PWD}/radio.img" ${PWD} 2>/dev/null
+
+        ## Delete everything that's not 'NON-HLOS.bin'
+        find "${PWD}/" -type f ! -name 'NON-HLOS.bin' -delete
+
+        ## Move 'NON-HLOS.bin' to 'radio.img.sparse'
+        mv "${PWD}/NON-HLOS.bin" "${PWD}/radio.img.sparse"
+    
+        ## Conver from sparse to RAW
+        ${simg2img} "${PWD}/radio.img.sparse" "${outdir}/radio.img" 2>/dev/null
+
+        ## Remove old sparsed image
+        rm -rf ${PWD}/radio.img.sparse
+    fi
+fi
 
 cd "$LOCALDIR"
 rm -rf "$tmpdir"
