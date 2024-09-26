@@ -175,6 +175,28 @@ fi
 
 echo "Extracting firmware on: $outdir"
 
+# Extract motorola's 'SINGLE_N_LONELY'-encrypted images
+## Set common utility
+STAR=${toolsdir}/Linux/bin/star.sh
+
+## Extract 'radio.img'
+if [[ $(7z l -ba "$romzip" | grep radio.img) ]]; then
+    7z e -y "${romzip}" radio.img -o"${outdir}" 2>/dev/null >> $tmpdir/zip.log
+
+    ### Use 'star.sh' to extract their content
+    if [[ $(head -c15 "${outdir}/radio.img") == "SINGLE_N_LONELY" ]]; then
+        echo "[INFO] 'SINGLE_N_LONELY' detected for 'radio.img', extracting through 'star'..."
+        "${STAR}" "${outdir}/radio.img" "${outdir}" >> /dev/null 2>&1 
+
+        ## Clean-up all uneccessary resources
+        find ${outdir}/ -type f ! -name 'NON-HLOS.bin' -and ! -name 'tz.mbn' -delete
+
+        ## Finish by converting sparse data to RAW
+        $simg2img "${outdir}/NON-HLOS.bin" "$outdir/radio.img" 2>/dev/null
+        rm -rf "${outdir}/NON-HLOS.bin"
+    fi
+fi
+
 for otherpartition in $OTHERPARTITIONS; do
     filename=$(echo $otherpartition | cut -f 1 -d ":")
     outname=$(echo $otherpartition | cut -f 2 -d ":")
