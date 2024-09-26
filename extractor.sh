@@ -175,21 +175,22 @@ fi
 
 echo "Extracting firmware on: $outdir"
 
-for otherpartition in $OTHERPARTITIONS; do
-    filename=$(echo $otherpartition | cut -f 1 -d ":")
-    outname=$(echo $otherpartition | cut -f 2 -d ":")
-    if [[ $(7z l -ba "$romzip" | grep $filename) ]]; then
-        echo "$filename detected for $outname"
-        foundfiles=$(7z l -ba "$romzip" | gawk '{ print $NF }' | grep $filename)
-        7z e -y "$romzip" $foundfiles 2>/dev/null >> $tmpdir/zip.log
-        outputs=$(ls *"$filename"*)
-        for output in $outputs; do
-            [[ ! -e "$outname".img ]] && mv $output "$outname".img
-            $simg2img "$outname".img "$outdir/$outname".img 2>/dev/null
-            if [[ ! -s "$outdir/$outname".img ]] && [ -f "$outname".img ]; then
-                mv "$outname".img "$outdir/$outname".img
-            fi
-        done
+# Extract firmware partitions
+for partition in ${OTHERPARTITIONS}; do
+    # Set the names for the partition(s)
+    IN=$(echo $partition | cut -f 1 -d ":")
+    OUT=$(echo $partition | cut -f 2 -d ":")
+
+    # Check if partition is present on archive
+    if $(7z l -ba "$romzip" | grep -q $IN); then
+        echo "[INFO] Extracting ${IN}..."
+
+        # Extract to '${outdir}'
+        7zz x "${romzip}" "${IN}" -so > ${outdir}/${IN}.sparse
+
+        # Convert from sparse to RAW image
+        $simg2img "${outdir}/${IN}".sparse "${outdir}/${OUT}".img
+        rm -rf "${outdir}/${IN}".sparse
     fi
 done
 
