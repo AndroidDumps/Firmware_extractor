@@ -511,8 +511,9 @@ if $(7z l -ba "${romzip}" | grep -q radio.img); then
         ## Extract 'radio.img.sparse'
         "${star}" "${PWD}/radio.img" ${PWD} 2>/dev/null
 
-        ## Delete everything that's not 'NON-HLOS.bin'
-        find "${PWD}/" -type f ! -name 'NON-HLOS.bin' -delete
+        ## Delete everything that's not 'NON-HLOS.bin' and 'fsg.mbn'
+        find "${PWD}/" -type f ! -name 'NON-HLOS.bin' -and ! -name 'fsg.mbn' -delete
+        mv ${PWD}/fsg.mbn ${outdir}/fsg.mbn
 
         ## Move 'NON-HLOS.bin' to 'radio.img.sparse'
         mv "${PWD}/NON-HLOS.bin" "${PWD}/radio.img.sparse"
