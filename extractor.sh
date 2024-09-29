@@ -90,6 +90,7 @@ star="$toolsdir/$HOST/bin/star"
 
 romzip="$(realpath $1)"
 romzipext="${romzip##*.}"
+filename="$(basename ${romzip%%.*})"
 PARTITIONS="super system vendor cust odm oem factory product xrom modem dtbo dtb boot recovery tz systemex oppo_product preload_common system_ext system_other opproduct reserve india my_preload my_odm my_stock my_operator my_country my_product my_company my_engineering my_heytap my_custom my_manifest my_carrier my_region my_bigball my_version special_preload vendor_dlkm odm_dlkm system_dlkm init_boot vendor_kernel_boot vendor_boot mi_ext boot-debug vendor_boot-debug hw_product product_h preas preavs"
 EXT4PARTITIONS="system vendor cust odm oem factory product xrom systemex oppo_product preload_common hw_product product_h preas preavs"
 OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem NON-HLOS:modem boot-verified.img:boot dtbo-verified.img:dtbo"
@@ -105,14 +106,52 @@ mkdir -p "$outdir"
 cd $tmpdir
 
 MAGIC=$(head -c12 "$romzip" | tr -d '\0')
-if [[ $MAGIC == "OPPOENCRYPT!" ]] || [[ "$romzipext" == "ozip" ]]; then
-    echo "ozip detected"
-    cp "$romzip" "$tmpdir/temp.ozip"
-    python3 $ozipdecrypt "$tmpdir/temp.ozip"
-    if [[ -d "$tmpdir/out" ]]; then
-        7z a -r "$tmpdir/temp.zip" "$tmpdir/out/*"
+
+# File is '.ozip'
+if [[ "${MAGIC}" == "OPPOENCRYPT!" ]] || [[ "${romzipext}" == "ozip" ]]; then
+
+    # Function to archive directories to a fake image.
+    directory_archive() {
+        # We probably have 'vendor/' extracted to a directory.
+        7z x "${tmpdir}/$(basename ${romzip%%.*}).zip" -o"${tmpdir}/ozip/"  > /dev/null
+
+        # Set a variable for working directory
+        WORKING_OZIP=${tmpdir}/ozip
+
+        # Convert all directories to 'images' (even though it's an archive)
+        for image in recovery system vendor; do
+            # Archive to a '.zip', first
+            7z a -r ${outdir}/${image}.zip ${WORKING_OZIP}/${image}/* > /dev/null
+
+            # Move '.zip' to .'img' to get recognized by dumper
+            mv ${outdir}/${image}.zip ${outdir}/${image}.img
+
+            # Remove remaining directory
+            rm -rf ${outdir}/${image}/
+        done
+
+        # Move every image from 'ozip/' to '${outdir}'
+        find "${tmpdir}/ozip/." -name "*.img" -exec mv {} "${outdir}" \; 
+
+        # Delete extracted directory
+        rm -rf "${tmpdir}/ozip"
+    }
+
+    # Copy over encrypted archive to our directory
+    cp ${romzip} "${tmpdir}"
+
+    # Start decrypting the archive
+    echo "[INFO] Decrypting '.ozip' through 'oppo_ozip_decrypt'..."
+    python3 $ozipdecrypt "${tmpdir}/${filename}.ozip" > /dev/null
+    rm -rf "${tmpdir}/${filename}.ozip" ${tmpdir}/out ${tmpdir}/tmp
+
+    # Run extractor over decrypted archive
+    if $(7z l "${tmpdir}/${filename}.zip" | grep -q system.img); then
+        "$LOCALDIR/extractor.sh" "${tmpdir}/${filename}.zip" "$outdir"
+    else
+        directory_archive
     fi
-    "$LOCALDIR/extractor.sh" "$tmpdir/temp.zip" "$outdir"
+    rm -rf "${tmpdir}/${filename}.zip" > /dev/null
     exit
 fi
 
