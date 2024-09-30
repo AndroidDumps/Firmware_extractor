@@ -62,7 +62,6 @@ toolsdir="$LOCALDIR/tools"
 
 EXTERNAL_TOOLS=(
     https://github.com/bkerler/oppo_ozip_decrypt.git
-    https://github.com/erfanoabdi/update_payload_extractor.git
 )
 
 # Start cloning requires repositories (tools)
@@ -78,7 +77,6 @@ done
 simg2img="$toolsdir/$HOST/bin/simg2img"
 packsparseimg="$toolsdir/$HOST/bin/packsparseimg"
 unsin="$toolsdir/$HOST/bin/unsin"
-payload_extractor="$toolsdir/update_payload_extractor/extract.py"
 payload_go="$toolsdir/$HOST/bin/payload-dumper-go"
 sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
