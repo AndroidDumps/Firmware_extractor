@@ -60,16 +60,20 @@ if [[ "$(uname)" == *CYGWIN* ]]; then
 fi
 toolsdir="$LOCALDIR/tools"
 
-if [[ ! -d "$toolsdir/oppo_ozip_decrypt" ]]; then
-    git clone -q https://github.com/bkerler/oppo_ozip_decrypt.git "$toolsdir/oppo_ozip_decrypt"
-else
-    git -C "$toolsdir/oppo_ozip_decrypt" pull
-fi
-if [[ ! -d "$toolsdir/update_payload_extractor" ]]; then
-    git clone -q https://github.com/erfanoabdi/update_payload_extractor.git "$toolsdir/update_payload_extractor"
-else
-    git -C "$toolsdir/update_payload_extractor" pull
-fi
+EXTERNAL_TOOLS=(
+    https://github.com/bkerler/oppo_ozip_decrypt.git
+    https://github.com/erfanoabdi/update_payload_extractor.git
+)
+
+# Start cloning requires repositories (tools)
+for tool_url in "${EXTERNAL_TOOLS[@]}"; do
+    tool_path="${toolsdir}/${tool_url##*/}"
+    if ! [[ -d ${tool_path} ]]; then
+        git clone -q "${tool_url}" "${tool_path}" >> /dev/null 2>&1
+    else
+        git -C "${tool_path}" pull >> /dev/null 2>&1  
+    fi
+done
 
 simg2img="$toolsdir/$HOST/bin/simg2img"
 packsparseimg="$toolsdir/$HOST/bin/packsparseimg"
