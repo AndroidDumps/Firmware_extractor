@@ -455,12 +455,6 @@ elif [[ $(7z l -ba "$romzip" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]
         exit 1
     fi
     romzip=""
-elif [[ $(7z l -ba "$romzip" | grep .tar) && ! $(7z l -ba "$romzip" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
-    tar=$(7z l -ba "$romzip" | grep .tar | gawk '{ print $NF }')
-    echo "non AP tar detected"
-    7z e -y "$romzip" $tar 2>/dev/null >> $tmpdir/zip.log
-    "$LOCALDIR/extractor.sh" $tar "$outdir"
-    exit
 elif [[ $(7z l -ba "$romzip" | grep payload.bin) ]]; then
     echo "AB OTA detected"
     7z e -y "$romzip" payload.bin 2>/dev/null >> $tmpdir/zip.log
@@ -473,6 +467,12 @@ elif [[ $(7z l -ba "$romzip" | grep payload.bin) ]]; then
     done
     [[ -f "payload.bin" ]] && rm payload.bin
     rm -rf "$tmpdir"
+    exit
+elif [[ $(7z l -ba "$romzip" | grep .tar) && ! $(7z l -ba "$romzip" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
+    tar=$(7z l -ba "$romzip" | grep .tar | gawk '{ print $NF }')
+    echo "non AP tar detected"
+    7z e -y "$romzip" $tar 2>/dev/null >> $tmpdir/zip.log
+    "$LOCALDIR/extractor.sh" $tar "$outdir"
     exit
 elif [[ $(7z l -ba "$romzip" | grep ".*.rar\|.*.zip") ]]; then
     echo "Image zip firmware detected"
