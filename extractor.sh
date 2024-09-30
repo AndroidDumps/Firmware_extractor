@@ -54,10 +54,6 @@ if [ "$1" == "" ]; then
 fi
 
 LOCALDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-HOST="$(uname)"
-if [[ "$(uname)" == *CYGWIN* ]]; then
-    HOST=Windows
-fi
 toolsdir="$LOCALDIR/tools"
 
 EXTERNAL_TOOLS=(
@@ -74,21 +70,21 @@ for tool_url in "${EXTERNAL_TOOLS[@]}"; do
     fi
 done
 
-simg2img="$toolsdir/$HOST/bin/simg2img"
-packsparseimg="$toolsdir/$HOST/bin/packsparseimg"
-unsin="$toolsdir/$HOST/bin/unsin"
-payload_go="$toolsdir/$HOST/bin/payload-dumper-go"
+simg2img="$toolsdir/bin/simg2img"
+packsparseimg="$toolsdir/bin/packsparseimg"
+unsin="$toolsdir/bin/unsin"
+payload_go="$toolsdir/bin/payload-dumper-go"
 sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
-lpunpack="$toolsdir/$HOST/bin/lpunpack"
+lpunpack="$toolsdir/bin/lpunpack"
 splituapp="$toolsdir/splituapp"
 pacextractor="$toolsdir/pacExtractor.py"
-nb0_extract="$toolsdir/$HOST/bin/nb0-extract"
+nb0_extract="$toolsdir/bin/nb0-extract"
 kdz_extract="$toolsdir/kdztools/unkdz.py"
 dz_extract="$toolsdir/kdztools/undz.py"
-ruu="$toolsdir/$HOST/bin/RUU_Decrypt_Tool"
+ruu="$toolsdir/bin/RUU_Decrypt_Tool"
 aml_extract="$toolsdir/aml-upgrade-package-extract"
-star="$toolsdir/$HOST/bin/star"
+star="$toolsdir/bin/star"
 
 romzip="$(realpath "$1")"
 romzipext="${romzip}##*.}"
