@@ -125,7 +125,7 @@ if [[ "${MAGIC}" == "OPPOENCRYPT!" ]] || [[ "${romzipext}" == "ozip" ]]; then
             mv "${outdir}"/${image}.zip "${outdir}"/${image}.img
 
             # Remove remaining directory
-            rm -rf "${outdir}"/${image}/
+            rm -rf "${outdir:?}"/${image}/
         done
 
         # Move every image from 'ozip/' to '${outdir}'
@@ -144,7 +144,7 @@ if [[ "${MAGIC}" == "OPPOENCRYPT!" ]] || [[ "${romzipext}" == "ozip" ]]; then
     rm -rf "${tmpdir}/${filename}.ozip" "${tmpdir}"/out "${tmpdir}"/tmp
 
     # Run extractor over decrypted archive
-    if $(7z l "${tmpdir}/${filename}.zip" | grep -q system.img); then
+    if 7z l "${tmpdir}/${filename}.zip" | grep -q system.img; then
         "$LOCALDIR/extractor.sh" "${tmpdir}/${filename}.zip" "${outdir}"
     else
         directory_archive
@@ -153,10 +153,10 @@ if [[ "${MAGIC}" == "OPPOENCRYPT!" ]] || [[ "${romzipext}" == "ozip" ]]; then
     exit
 fi
 
-if [[ $(echo "${romzip}" | grep kdz) ]]; then
+if echo "${romzip}" | grep -q kdz; then
     echo "KDZ detected"
     python3 "$kdz_extract" -f "${romzip}" -x -o "./"
-    dzfile=$(ls *.dz)
+    dzfile=$(ls ./*.dz)
     python3 "$dz_extract" -f "$dzfile" -s -o "./"
     # Some known dz-partitions "gpt_main persist misc metadata vendor system system_other product userdata gpt_backup tz boot dtbo vbmeta cust oem odm factory modem NON-HLOS"
     find . -maxdepth 4 -type f -name "*.image" | rename 's/.image/.img/g' > /dev/null 2>&1
@@ -171,13 +171,13 @@ if [[ $(echo "${romzip}" | grep kdz) ]]; then
     exit 0
 fi
 
-if [[ $(echo "${romzip}" | grep -i ruu_ | grep -i exe) ]]; then
+if echo "${romzip}" | grep -qi ruu_ | grep -qi exe; then
     echo "RUU detected"
     cp "${romzip}" "$tmpdir"
     romzip="$tmpdir/$(basename "${romzip}")"
     $ruu -s "${romzip}" 2>/dev/null
     $ruu -f "${romzip}" 2>/dev/null
-    find "$tmpdir/OUT"* -name *.img -exec mv {} "$tmpdir" \;
+    find "$tmpdir/OUT"* -name ./"*.img" -exec mv {} "$tmpdir" \;
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "${outdir}/$partition.img"
     done
@@ -185,15 +185,15 @@ if [[ $(echo "${romzip}" | grep -i ruu_ | grep -i exe) ]]; then
     exit 0
 fi
 
-if [[ $(7z l -ba "${romzip}" | grep -i aml) ]]; then
+if 7z l -ba "${romzip}" | grep -qi aml; then
     echo "aml detected"
     cp "${romzip}" "$tmpdir"
     romzip="$tmpdir/$(basename "${romzip}")"
     7z e -y "${romzip}" >> "$tmpdir"/zip.log
-    $aml_extract $(find . -type f -name "*aml*.img")
-    rename 's/.PARTITION$/.img/' *.PARTITION
-    rename 's/_aml_dtb.img$/dtb.img/' *.img
-    rename 's/_a.img/.img/' *.img
+    $aml_extract "$(find . -type f -name "*aml*.img")"
+    rename 's/.PARTITION$/.img/' ./*.PARTITION
+    rename 's/_aml_dtb.img$/dtb.img/' ./*.img
+    rename 's/_a.img/.img/' ./*.img
     if [[ -f super.img ]]; then
         superimage
     fi
@@ -204,7 +204,7 @@ if [[ $(7z l -ba "${romzip}" | grep -i aml) ]]; then
     exit 0
 fi
 
-if [[ ! $(7z l -ba "${romzip}" | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|.*system_.*\.sin\|system-p\|super\|UPDATE.APP\|.*.pac\|.*.nb0" | grep -v ".*chunk.*\.so$") ]]; then
+if ! 7z l -ba "${romzip}" | grep ".*system.ext4.tar.*\|.*.tar\|.*chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img\|system-sign.img\|system.bin\|payload.bin\|.*.zip\|.*.rar\|.*rawprogram*\|system.sin\|.*system_.*\.sin\|system-p\|super\|UPDATE.APP\|.*.pac\|.*.nb0" | grep -qv ".*chunk.*\.so$"; then
     echo "BRUH: This type of firmwares not supported"
     cd "$LOCALDIR" || exit
     rm -rf "$tmpdir" "${outdir}"
@@ -220,11 +220,11 @@ for partition in ${OTHERPARTITIONS}; do
     OUT=$(echo "$partition" | cut -f 2 -d ":")
 
     # Check if partition is present on archive
-    if $(7z l -ba "${romzip}" | grep -q "$IN"); then
+    if 7z l -ba "${romzip}" | grep -q "$IN"; then
         echo "[INFO] Extracting ${IN}..."
 
         # Extract to '${outdir}'
-        7zz x "${romzip}" "${IN}" -so > "${outdir}"/"${IN}".sparse
+        7z x "${romzip}" "${IN}" -so > "${outdir}"/"${IN}".sparse
 
         # Convert from sparse to RAW image
         $simg2img "${outdir}/${IN}".sparse "${outdir}/${OUT}".img
@@ -232,15 +232,15 @@ for partition in ${OTHERPARTITIONS}; do
     fi
 done
 
-if [[ $(7z l -ba "${romzip}" | grep firmware-update/dtbo.img) ]]; then
+if 7z l -ba "${romzip}" | grep -q firmware-update/dtbo.img; then
     7z e -y "${romzip}" firmware-update/dtbo.img 2>/dev/null >> "$tmpdir"/zip.log
 fi
-if [[ $(7z l -ba "${romzip}" | grep system.new.dat) ]]; then
+if 7z l -ba "${romzip}" | grep -q system.new.dat; then
     echo "Aonly OTA detected"
     for partition in $PARTITIONS; do
         7z e -y "${romzip}" "$partition".new.dat* "$partition".transfer.list "$partition".img 2>/dev/null >> "$tmpdir"/zip.log
         7z e -y "${romzip}" "$partition".*.new.dat* "$partition".*.transfer.list "$partition".*.img 2>/dev/null >> "$tmpdir"/zip.log
-        rename 's/(\w+)\.(\d+)\.(\w+)/$1.$3/' *
+        rename 's/(\w+)\.(\d+)\.(\w+)/$1.$3/' ./*
         # For Oplus A-only OTAs, eg OnePlus Nord 2. Regex matches the 8 digits of Oplus NV ID (prop ro.build.oplus_nv_id) to remove them.
         # hello@world:~/test_regex# rename -n 's/(\w+)\.(\d+)\.(\w+)/$1.$3/' *
         # rename(my_bigball.00011011.new.dat.br, my_bigball.new.dat.br)
@@ -252,11 +252,11 @@ if [[ $(7z l -ba "${romzip}" | grep system.new.dat) ]]; then
         fi
         ls | grep "\.new\.dat" | while read i; do
             line=$(echo "$i" | cut -d"." -f1)
-            if [[ $(echo "$i" | grep "\.dat\.xz") ]]; then
+            if echo "$i" | grep -q "\.dat\.xz"; then
                 7z e -y "$i" 2>/dev/null >> "$tmpdir"/zip.log
                 rm -rf "$i"
             fi
-            if [[ $(echo "$i" | grep "\.dat\.br") ]]; then
+            if echo "$i" | grep -q "\.dat\.br"; then
                 echo "Converting brotli $partition dat to normal"
                 brotli -d "$i"
                 rm -f "$i"
@@ -266,7 +266,7 @@ if [[ $(7z l -ba "${romzip}" | grep system.new.dat) ]]; then
             rm -rf "$line".transfer.list "$line".new.dat
         done
     done
-elif [[ $(7z l -ba "${romzip}" | grep rawprogram) ]]; then
+elif 7z l -ba "${romzip}" | grep -q rawprogram; then
     echo "QFIL detected"
     rawprograms=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep rawprogram)
     7z e -y "${romzip}" "$rawprograms" 2>/dev/null >> "$tmpdir"/zip.log
@@ -288,7 +288,7 @@ elif [[ $(7z l -ba "${romzip}" | grep rawprogram) ]]; then
     if [[ -f super.img ]]; then
         superimage
     fi
-elif [[ $(7z l -ba "${romzip}" | grep nb0) ]]; then
+elif 7z l -ba "${romzip}" | grep -q nb0; then
     echo "nb0 detected"
     to_extract=$(7z l "${romzip}" | grep ".*.nb0" | gawk '{ print $6 }')
     echo "$to_extract"
@@ -299,17 +299,17 @@ elif [[ $(7z l -ba "${romzip}" | grep nb0) ]]; then
         mv "$part" "$partition".img
     done
     romzip=""
-elif [[ $(7z l -ba "${romzip}" | grep system | grep chunk | grep -v ".*\.so$") ]]; then
+elif 7z l -ba "${romzip}" | grep system | grep chunk | grep -qv ".*\.so$"; then
     echo "chunk detected"
     for partition in $PARTITIONS; do
         foundpartitions=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "$partition".img)
-        7z e -y "${romzip}" *"$partition"*chunk* */*"$partition"*chunk* "$foundpartitions" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
-        rm -f *"$partition"_b*
-        rm -f *"$partition"_other*
+        7z e -y "${romzip}" ./*"$partition"*chunk* ./*/*"$partition"*chunk* "$foundpartitions" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
+        rm -f ./*"$partition"_b*
+        rm -f ./*"$partition"_other*
         romchunk=$(ls | grep chunk | grep "$partition" | sort)
-        if [[ $(echo "$romchunk" | grep "sparsechunk") ]]; then
-            $simg2img $(echo "$romchunk" | tr '\n' ' ') "$partition".img.raw 2>/dev/null
-            rm -rf *"$partition"*chunk*
+        if echo "$romchunk" | grep -q "sparsechunk"; then
+            $simg2img "$(echo "$romchunk" | tr '\n' ' ')" "$partition".img.raw 2>/dev/null
+            rm -rf ./*"$partition"*chunk*
             if [[ -f $partition.img ]]; then
                 rm -rf "$partition".img.raw
             else
@@ -317,17 +317,17 @@ elif [[ $(7z l -ba "${romzip}" | grep system | grep chunk | grep -v ".*\.so$") ]
             fi
         fi
     done
-elif [[ $(7z l -ba "${romzip}" | grep "super.img") ]]; then
+elif 7z l -ba "${romzip}" | grep -q "super.img"; then
     echo "super detected"
     foundsupers=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "super.img")
     7z e -y "${romzip}" "$foundsupers" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
     superchunk=$(ls | grep chunk | grep super | sort)
-    if [[ $(echo "$superchunk" | grep "sparsechunk") ]]; then
+    if echo "$superchunk" | grep -q "sparsechunk"; then
         $simg2img $(echo "$superchunk" | tr '\n' ' ') super.img.raw 2>/dev/null
-        rm -rf *super*chunk*
+        rm -rf ./*super*chunk*
     fi
     superimage
-elif [[ $(7z l -ba "${romzip}" | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img\|\/system_image.emmc.img\|^system_image.emmc.img") ]]; then
+elif 7z l -ba "${romzip}" | gawk '{print $NF}' | grep -q "system_new.img\|^system.img\|\/system.img\|\/system_image.emmc.img\|^system_image.emmc.img"; then
     echo "Image detected"
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
     find "$tmpdir"/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1 # removes space from file name
@@ -340,7 +340,7 @@ elif [[ $(7z l -ba "${romzip}" | gawk '{print $NF}' | grep "system_new.img\|^sys
     find "$tmpdir" -maxdepth 1 -type f -name "*_new.img" | rename 's/_new.img/.img/g' > /dev/null 2>&1 # proper .img names
     find "$tmpdir" -maxdepth 1 -type f -name "*.img.ext4" | rename 's/.img.ext4/.img/g' > /dev/null 2>&1 # proper .img names
     romzip=""
-elif [[ $(7z l -ba "${romzip}" | grep "system.sin\|.*system_.*\.sin") ]]; then
+elif 7z l -ba "${romzip}" | grep -q "system.sin\|.*system_.*\.sin"; then
     echo "sin detected"
     to_remove=$(7z l "${romzip}" | grep ".*boot_.*\.sin" | gawk '{ print $6 }' | sed -e 's/boot_\(.*\).sin/\1/')
     if [ -z "$to_remove" ]
@@ -357,13 +357,13 @@ elif [[ $(7z l -ba "${romzip}" | grep "system.sin\|.*system_.*\.sin") ]]; then
     $unsin -d "$tmpdir"
     find "$tmpdir" -maxdepth 1 -type f -name "*.ext4" | rename 's/.ext4/.img/g' > /dev/null 2>&1 # proper names
     foundsuperinsin=$(find "$tmpdir" -maxdepth 1 -type f -name "super_*.img")
-    if [ ! -z "$foundsuperinsin" ]; then
-        mv $(ls "$tmpdir"/super_*.img) "$tmpdir/super.img"
+    if [ -n "$foundsuperinsin" ]; then
+        mv "$(ls "$tmpdir"/super_*.img)" "$tmpdir/super.img"
         echo "super image inside a sin detected"
         superimage
     fi
     romzip=""
-elif [[ $(7z l -ba "${romzip}" | grep ".pac$") ]]; then
+elif 7z l -ba "${romzip}" | grep -q ".pac$"; then
     echo "pac detected"
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
     find "$tmpdir"/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
@@ -374,22 +374,22 @@ elif [[ $(7z l -ba "${romzip}" | grep ".pac$") ]]; then
     if [[ -f super.img ]]; then
         superimage
     fi
-elif [[ $(7z l -ba "${romzip}" | grep "system.bin") ]]; then
+elif 7z l -ba "${romzip}" | grep -q "system.bin"; then
     echo "bin images detected"
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
     find "$tmpdir"/ -mindepth 2 -type f -name "*.bin" -exec mv {} . \; # move .img in sub-dir to $tmpdir
     find "$tmpdir" -maxdepth 1 -type f -name "*.bin" | rename 's/.bin/.img/g' > /dev/null 2>&1 # proper names
     romzip=""
-elif [[ $(7z l -ba "${romzip}" | grep "system-p") ]]; then
+elif 7z l -ba "${romzip}" | grep -q "system-p"; then
     echo "P suffix images detected"
     for partition in $PARTITIONS; do
         foundpartitions=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "$partition"-p)
         7z e -y "${romzip}" "$foundpartitions" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
-        if [ ! -z "$foundpartitions" ]; then
-            mv $(ls "$partition"-p*) "$partition.img"
+        if [ -n "$foundpartitions" ]; then
+            mv "$(ls "$partition"-p*)" "$partition.img"
         fi
     done
-elif [[ $(7z l -ba "${romzip}" | grep "system-sign.img") ]]; then
+elif 7z l -ba "${romzip}" | grep "system-sign.img"; then
     echo "sign images detected"
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
     for partition in $PARTITIONS; do
@@ -413,7 +413,7 @@ elif [[ $(7z l -ba "${romzip}" | grep "system-sign.img") ]]; then
             offset_high=0x${offset_high:0-4}
             offset_low=$(printf "%d" "$offset_low")
             offset_high=$(printf "%d" "$offset_high")
-            offset=$((65536*${offset_high}+${offset_low}))
+            offset=$((65536*offset_high+offset_low))
             dd if="$tmpdir/$file" of="$tmpdir/x.img" iflag=count_bytes,skip_bytes bs=8192 skip=64 count=$offset > /dev/null 2>&1
         else # header with BFBF magic or another unknowed header
             dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
@@ -426,17 +426,17 @@ elif [[ $(7z l -ba "${romzip}" | grep "system-sign.img") ]]; then
         fi
     done
     romzip=""
-elif [[ $(7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
+elif 7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep -q AP_; then
     echo "AP tarmd5 detected"
     echo "Extracting tarmd5"
     7z e -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
     echo "Extracting images..."
-    for i in $(ls *.tar.md5); do
+    for i in $(ls ./'*.tar.md5'); do
         tar -xf "$i" || exit 1
         rm -fv "$i" || exit 1
         echo "Extracted $i"
     done
-    for f in $(ls *.lz4); do
+    for f in $(ls ./'*.lz4'); do
         lz4 -dc "$f" > "${f/.lz4/}" || exit 1
         rm -fv "$f" || exit 1
         echo "Extracted $f"
@@ -453,26 +453,28 @@ elif [[ $(7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep AP_)
         exit 1
     fi
     romzip=""
-elif [[ $(7z l -ba "${romzip}" | grep payload.bin) ]]; then
+elif 7z l -ba "${romzip}" | grep -q payload.bin; then
     echo "AB OTA detected"
     7z e -y "${romzip}" payload.bin 2>/dev/null >> "$tmpdir"/zip.log
-    [[ "$(command -v otadump)" ]] && {
+    if command -v otadump; then
         otadump --list payload.bin
         otadump -o "$tmpdir" payload.bin
-    } || $payload_go -o "$tmpdir" "${romzip}"
+    else
+        $payload_go -o "$tmpdir" "${romzip}"
+    fi
     for partition in $PARTITIONS; do
         [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "${outdir}/$partition.img"
     done
     [[ -f "payload.bin" ]] && rm payload.bin
     rm -rf "$tmpdir"
     exit
-elif [[ $(7z l -ba "${romzip}" | grep .tar) && ! $(7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
+elif 7z l -ba "${romzip}" | grep -q .tar && ! 7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep -q AP_; then
     tar=$(7z l -ba "${romzip}" | grep .tar | gawk '{ print $NF }')
     echo "non AP tar detected"
     7z e -y "${romzip}" "$tar" 2>/dev/null >> "$tmpdir"/zip.log
     "$LOCALDIR/extractor.sh" "$tar" "${outdir}"
     exit
-elif [[ $(7z l -ba "${romzip}" | grep ".*.rar\|.*.zip") ]]; then
+elif 7z l -ba "${romzip}" | grep -q ".*.rar\|.*.zip"; then
     echo "Image zip firmware detected"
     mkdir -p "$tmpdir"/zipfiles
     7z e -y "${romzip}" -o"$tmpdir"/zipfiles 2>/dev/null >> "$tmpdir"/zip.log
@@ -482,7 +484,7 @@ elif [[ $(7z l -ba "${romzip}" | grep ".*.rar\|.*.zip") ]]; then
        "$LOCALDIR/extractor.sh" "$tmpdir"/zipfiles/"$file" "${outdir}"
     done
     exit
-elif [[ $(7z l -ba "${romzip}" | grep "UPDATE.APP") ]]; then
+elif 7z l -ba "${romzip}" | grep -q "UPDATE.APP"; then
     echo "Huawei UPDATE.APP detected"
     7z x "${romzip}" UPDATE.APP
     python3 "$splituapp" -f "UPDATE.APP" -l super preas preavs || (
@@ -516,12 +518,12 @@ for partition in $PARTITIONS; do
     if [[ $EXT4PARTITIONS =~ (^|[[:space:]])"$partition"($|[[:space:]]) ]] && [ -f "${outdir}"/"$partition".img ]; then
         MAGIC=$(head -c12 "${outdir}"/"$partition".img | tr -d '\0')
         offset=$(LANG=C grep -aobP -m1 '\x53\xEF' "${outdir}"/"$partition".img | head -1 | gawk '{print $1 - 1080}')
-        if [[ $(echo "$MAGIC" | grep "MOTO") ]]; then
+        if echo "$MAGIC" | grep -q "MOTO"; then
             if [[ "$offset" == 128055 ]]; then
                 offset=131072
             fi
             echo "MOTO header detected on $partition in $offset"
-        elif [[ $(echo "$MAGIC" | grep "ASUS") ]]; then
+        elif echo "$MAGIC" | grep -q "ASUS"; then
             echo "ASUS header detected on $partition in $offset"
         else
             offset=0
@@ -538,7 +540,7 @@ for partition in $PARTITIONS; do
 done
 
 # Specifically check if input is 'radio.img'
-if $(7z l -ba "${romzip}" | grep -q radio.img); then
+if 7z l -ba "${romzip}" | grep -q radio.img; then
     ## Extract 'radio.img' from archive'
     echo "[INFO] Extracting 'radio.img'..."
     7z x "${romzip}" radio.img -o"${PWD}" >> "$tmpdir"/zip.log
