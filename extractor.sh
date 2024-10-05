@@ -73,7 +73,7 @@ done
 simg2img="$toolsdir/simg2img"
 packsparseimg="$toolsdir/packsparseimg"
 unsin="$toolsdir/unsin"
-payload_go="$toolsdir/payload-dumper-go"
+otadump="$toolsdir/otadump"
 sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 lpunpack="$toolsdir/lpunpack"
@@ -454,17 +454,23 @@ elif [[ $(7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep AP_)
     fi
     romzip=""
 elif [[ $(7z l -ba "${romzip}" | grep payload.bin) ]]; then
-    echo "AB OTA detected"
-    7z e -y "${romzip}" payload.bin 2>/dev/null >> "$tmpdir"/zip.log
-    [[ "$(command -v otadump)" ]] && {
-        otadump --list payload.bin
-        otadump -o "$tmpdir" payload.bin
-    } || $payload_go -o "$tmpdir" "${romzip}"
-    for partition in $PARTITIONS; do
-        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "${outdir}/$partition.img"
+    # Copy 'payload.bin' to our directory
+    7z x -y "${romzip}" payload.bin 2>/dev/null >> "${tmpdir}"/zip.log
+
+    # Extract content to our directory
+    echo "[INFO] Extracting 'payload.bin' partitions..."
+    ${otadump} -o "${tmpdir}" "${PWD}/payload.bin" 2>/dev/null ||
+        echo "[ERROR] Failed extracting partitions."
+
+    for p in ${PARTITIONS}; do
+        [[ -e "${tmpdir}/${p}.img" ]] && \
+            mv "${tmpdir}/${p}.img" "${outdir}/${p}.img"
     done
-    [[ -f "payload.bin" ]] && rm payload.bin
+
+    # Remove temporary files
+    [[ -f "payload.bin" ]] && rm "${PWD}/payload.bin"
     rm -rf "$tmpdir"
+
     exit
 elif [[ $(7z l -ba "${romzip}" | grep .tar) && ! $(7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
     tar=$(7z l -ba "${romzip}" | grep .tar | gawk '{ print $NF }')
