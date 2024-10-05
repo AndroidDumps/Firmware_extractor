@@ -453,6 +453,15 @@ elif [[ $(7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep AP_)
         exit 1
     fi
     romzip=""
+elif 7z l -ba "${romzip}" | grep -q ./"*.tar"; then
+    echo "[INFO] Non-AP tar detected"
+
+    # Extract '.tar' content
+    TAR=$(7z l -ba "${romzip}" | grep ./"*.tar" | gawk '{ print $NF }')
+    7z e -y "${romzip}" "${TAR}" 2>/dev/null >> "${tmpdir}"/zip.log
+
+    "${LOCALDIR}/extractor.sh" "${TAR}" "${outdir}"
+    exit
 elif [[ $(7z l -ba "${romzip}" | grep payload.bin) ]]; then
     # Copy 'payload.bin' to our directory
     7z x -y "${romzip}" payload.bin 2>/dev/null >> "${tmpdir}"/zip.log
@@ -471,12 +480,6 @@ elif [[ $(7z l -ba "${romzip}" | grep payload.bin) ]]; then
     [[ -f "payload.bin" ]] && rm "${PWD}/payload.bin"
     rm -rf "$tmpdir"
 
-    exit
-elif [[ $(7z l -ba "${romzip}" | grep .tar) && ! $(7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
-    tar=$(7z l -ba "${romzip}" | grep .tar | gawk '{ print $NF }')
-    echo "non AP tar detected"
-    7z e -y "${romzip}" "$tar" 2>/dev/null >> "$tmpdir"/zip.log
-    "$LOCALDIR/extractor.sh" "$tar" "${outdir}"
     exit
 elif [[ $(7z l -ba "${romzip}" | grep ".*.rar\|.*.zip") ]]; then
     echo "Image zip firmware detected"
