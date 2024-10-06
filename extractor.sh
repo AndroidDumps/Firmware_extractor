@@ -98,7 +98,8 @@ OTHERPARTITIONS="tz.mbn:tz tz.img:tz modem.img:modem NON-HLOS:modem boot-verifie
 
 echo "Create Temp and out dir"
 outdir="$LOCALDIR/out"
-if [ ! "$2" == "" ]; then
+if [ -n "${2}" ]; then
+    [ ! -d "${2}" ] && mkdir "${2}"
     outdir="$(realpath "$2")"
 fi
 tmpdir="${outdir}/tmp"
