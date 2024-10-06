@@ -9,11 +9,6 @@
 apt install unace unrar zip unzip p7zip-full p7zip-rar sharutils rar uudeview mpack arj cabextract rename liblzma-dev python-pip brotli lz4 protobuf-compiler git gawk
 pip install backports.lzma protobuf pycrypto twrpdtgen extract-dtb pycryptodome
 ```
-### Misc
-
-- Install rust using https://rustup.rs/
-- Run `git clone https://github.com/crazystylus/otadump` , `cd otadump/`, `cargo build --release`.
-- Navigate to `/target/release` and add the generated `otadump` executable to your PATH.
 
 ## How to use
 ### Download
