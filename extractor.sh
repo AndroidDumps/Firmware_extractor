@@ -431,43 +431,67 @@ elif [[ $(7z l -ba "${romzip}" | grep "system-p") ]]; then
             mv $(ls "$partition"-p*) "$partition.img"
         fi
     done
-elif [[ $(7z l -ba "${romzip}" | grep "system-sign.img") ]]; then
-    echo "sign images detected"
-    7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
-    for partition in $PARTITIONS; do
-        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "${outdir}/$partition.img"
+elif 7z l -ba "${romzip}" | grep -q system-sign.img; then
+    echo "[INFO] 'sign' images detected"
+
+    # Extract images to '${tmpdir}'
+    echo "[INFO] Extracting archive with images..."
+
+    for p in ${PARTITIONS}; do
+        SIGN=$(echo ${p}-sign.img)
+        7z x -y "${romzip}" ${SIGN} 2>/dev/null >> "$tmpdir"/zip.log ||  {
+                echo "[ERROR] Failed to extract '${f}'"
+                exit 0
+            }
     done
-    find "$tmpdir"/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1 # removes space from file name
-    find "$tmpdir"/ -mindepth 2 -type f -name "*-sign.img" -exec mv {} . \; # move .img in sub-dir to $tmpdir
-    find "$tmpdir"/ -type f ! -name "*-sign.img" -exec rm -rf {} \; # delete other files
-    find "$tmpdir" -maxdepth 1 -type f -name "*-sign.img" | rename 's/-sign.img/.img/g' > /dev/null 2>&1 # proper .img names
-    sign_list=$(find "$tmpdir" -maxdepth 1 -type f -name "*.img" -printf '%P\n' | sort)
-    for file in $sign_list; do
-        rm -rf "$tmpdir/x.img"
-        MAGIC=$(head -c4 "$tmpdir/$file" | tr -d '\0')
-        if [[ $MAGIC == "SSSS" ]]
-        then
-            echo Cleaning "$file" with SSSS header
-            # This is for little_endian arch
-            offset_low=$(od -A n -x -j 60 -N 2 "$tmpdir/$file" | sed 's/ //g')
-            offset_high=$(od -A n -x -j 62 -N 2 "$tmpdir/$file" | sed 's/ //g')
-            offset_low=0x${offset_low:0-4}
-            offset_high=0x${offset_high:0-4}
-            offset_low=$(printf "%d" "$offset_low")
-            offset_high=$(printf "%d" "$offset_high")
-            offset=$((65536*${offset_high}+${offset_low}))
-            dd if="$tmpdir/$file" of="$tmpdir/x.img" iflag=count_bytes,skip_bytes bs=8192 skip=64 count=$offset > /dev/null 2>&1
-        else # header with BFBF magic or another unknowed header
-            dd if="$tmpdir/$file" of="$tmpdir/x.img" bs=$((0x4040)) skip=1 > /dev/null 2>&1
+
+    # Prepare temporary directory for cleaning
+    find "${tmpdir}"/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1 # removes space from file name
+    find "${tmpdir}"/ -mindepth 2 -type f -name "*-sign.img" -exec mv {} . \; # move .img in sub-dir to $tmpdir
+    find "${tmpdir}"/ -type f ! -name "*-sign.img" -exec rm -rf {} \; # delete other files
+    find "${tmpdir}"/ -maxdepth 1 -type f -name "*-sign.img" | rename 's/-sign.img/.img/g' > /dev/null 2>&1 # proper .img names
+
+    # Get a list of signed image(s)
+    SIGN=$(find "${tmpdir}" -maxdepth 1 -type f -name "*.img" -printf '%P\n' | sort)
+
+    for f in ${SIGN}; do
+        # Achieve magic of the file(s)
+        MAGIC=$(head -c4 "${tmpdir}/${f}" | tr -d '\0')
+
+        if [[ $MAGIC == "SSSS" ]]; then
+            echo "[INFO] Cleaning '${f}' with SSSS header..."
+
+            # This is for 'little_endian' arch
+            offset=$(od -A n -x -j 60 -N 4 "$tmpdir/$f" | sed 's/ //g')
+            offset=$((0x${offset:4:4} * 65536 + 0x${offset:0:4}))
+            dd if="${tmpdir}/${f}" of="${tmpdir}/${f}.tmp" iflag=count_bytes,skip_bytes bs=8192 skip=64 count=${offset} > /dev/null 2>&1 || {
+                echo "[ERROR] Failed to clean '${f}'"
+                exit 0
+            }
+        else 
+            echo "[INFO] Cleaning '${f}' with other header..."
+
+            # Header has BFBF magic or other
+            dd if="${tmpdir}/${f}" of="${tmpdir}/${f}.tmp" bs=$((0x4040)) skip=1 > /dev/null 2>&1 ||  {
+                echo "[ERROR] Failed to clean '${f}'"
+                exit 0
+            }
         fi
-        MAGIC=$(od -A n -X -j 0 -N 4 "$tmpdir/x.img" | sed 's/ //g')
+
+        # If magic matches with spared image, use 'simg2img' over it
+        MAGIC=$(od -A n -X -j 0 -N 4 "$tmpdir/${f}.tmp" | sed 's/ //g')
         if [[ $MAGIC == "ed26ff3a" ]]; then
-            $simg2img "$tmpdir/x.img" "$tmpdir/$file" > /dev/null 2>&1
+            "${simg2img}" "${tmpdir}/${f}.tmp" "${tmpdir}/${f}" > /dev/null 2>&1 ||  {
+                echo "[ERROR] Failed to unsparse '${f}'"
+                exit 0
+            }
         else
-            mv "$tmpdir/x.img" "$tmpdir/$file"
+            mv "${tmpdir}/${f}.tmp" "$tmpdir/${f}"
         fi
+
+        # Clean-up
+        rm -rf "${tmpdir}/${f}.tmp"
     done
-    romzip=""
 elif [[ $(7z l -ba "${romzip}" | grep tar.md5 | gawk '{ print $NF }' | grep AP_) ]]; then
     echo "AP tarmd5 detected"
     echo "Extracting tarmd5"
