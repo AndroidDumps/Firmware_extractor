@@ -58,7 +58,7 @@ LOCALDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 toolsdir="$LOCALDIR/tools"
 
 EXTERNAL_TOOLS=(
-    https://github.com/bkerler/oppo_ozip_decrypt.git
+    https://github.com/bkerler/oppo_ozip_decrypt
 )
 
 # Start cloning requires repositories (tools)
