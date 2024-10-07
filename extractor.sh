@@ -393,18 +393,20 @@ elif [[ $(7z l -ba "${romzip}" | grep "system.sin\|.*system_.*\.sin") ]]; then
     then
       to_remove=$(7z l "${romzip}" | grep ".*vendor_.*\.sin" | gawk '{ print $6 }' | sed -e 's/vendor_\(.*\).sin/\1/')
     fi
+    # Extract image(s) from archive
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
+
     find "$tmpdir"/ -mindepth 2 -type f -name "*.sin" -exec mv {} . \; # move .img in sub-dir to $tmpdir
     find "$tmpdir" -maxdepth 1 -type f -name "*_$to_remove.sin" | rename 's/_'"$to_remove"'.sin/.sin/g' > /dev/null 2>&1 # proper names
     $unsin -d "$tmpdir"
     find "$tmpdir" -maxdepth 1 -type f -name "*.ext4" | rename 's/.ext4/.img/g' > /dev/null 2>&1 # proper names
+
     foundsuperinsin=$(find "$tmpdir" -maxdepth 1 -type f -name "super_*.img")
     if [ ! -z "$foundsuperinsin" ]; then
         mv $(ls "$tmpdir"/super_*.img) "$tmpdir/super.img"
         echo "super image inside a sin detected"
         superimage
     fi
-    romzip=""
 elif [[ $(7z l -ba "${romzip}" | grep ".pac$") ]]; then
     echo "pac detected"
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
@@ -529,12 +531,12 @@ elif 7z l -ba "${romzip}" | grep -q ./"*.tar"; then
     "${LOCALDIR}/extractor.sh" "${TAR}" "${outdir}"
     exit
 elif [[ $(7z l -ba "${romzip}" | grep payload.bin) ]]; then
-    # Copy 'payload.bin' to our directory
-    7z x -y "${romzip}" payload.bin 2>/dev/null >> "${tmpdir}"/zip.log
+    echo "[INFO] A/B package detected"
 
     # Extract content to our directory
     echo "[INFO] Extracting 'payload.bin' partitions..."
-    ${otadump} -o "${tmpdir}" "${PWD}/payload.bin" 2>/dev/null ||
+    ${otadump} --list "${romzip}"
+    ${otadump} -o "${tmpdir}" "${romzip}" 2>/dev/null ||
         echo "[ERROR] Failed extracting partitions."
 
     for p in ${PARTITIONS}; do
