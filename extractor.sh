@@ -22,6 +22,8 @@
 # Amlogic upgrade package
 # Rockchip upgrade package
 
+shopt -s extglob
+
 superimage() {
     if [ -f super.img ]; then
         echo "Creating super.img.raw ..."
@@ -189,7 +191,7 @@ if [[ $(echo "${romzip}" | grep -i ruu_ | grep -i exe) ]]; then
     exit 0
 fi
 
-if grep -q "rockchip" "${romzip}"; then
+if [[ "${romzip}" == *.@(img|bin) ]] && [ "$(head -c6 "${romzip}")" == "RKFWf" ]; then
     echo "[INFO] Detected rockchip archive"
 
     # Start the extraction of partition
@@ -269,7 +271,7 @@ for partition in ${OTHERPARTITIONS}; do
         7z x "${romzip}" "${IN}" -so > "${outdir}"/"${IN}".sparse
 
         # Convert from sparse to RAW image
-        $simg2img "${outdir}/${IN}".sparse "${outdir}/${OUT}".img
+        $simg2img "${outdir}/${IN}".sparse "${outdir}/${OUT}".img   
         rm -rf "${outdir}/${IN}".sparse
     fi
 done
@@ -409,7 +411,7 @@ elif [[ $(7z l -ba "${romzip}" | grep "system.sin\|.*system_.*\.sin") ]]; then
     fi
 elif [[ $(7z l -ba "${romzip}" | grep ".pac$") ]]; then
     echo "pac detected"
-    7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
+    7z x -y "${mzip}" 2>/dev/null >> "$tmpdir"/zip.log
     find "$tmpdir"/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
     pac_list=$(find "$tmpdir"/ -type f -name "*.pac" -printf '%P\n' | sort)
     for file in $pac_list; do
