@@ -266,7 +266,7 @@ for partition in ${OTHERPARTITIONS}; do
         echo "[INFO] Extracting ${IN}..."
 
         # Extract to '${outdir}'
-        7zz x "${romzip}" "${IN}" -so > "${outdir}"/"${IN}".sparse
+        7z x "${romzip}" "${IN}" -so > "${outdir}"/"${IN}".sparse
 
         # Convert from sparse to RAW image
         $simg2img "${outdir}/${IN}".sparse "${outdir}/${OUT}".img
