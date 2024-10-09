@@ -80,7 +80,7 @@ otadump="$toolsdir/otadump"
 sdat2img="$toolsdir/sdat2img.py"
 ozipdecrypt="$toolsdir/oppo_ozip_decrypt/ozipdecrypt.py"
 lpunpack="$toolsdir/lpunpack"
-splituapp="$toolsdir/splituapp"
+update_extractor="$toolsdir/update-extractor.py"
 pacextractor="$toolsdir/pacExtractor.py"
 nb0_extract="$toolsdir/nb0-extract"
 kdz_extract="$toolsdir/unkdz.py"
@@ -561,27 +561,22 @@ elif [[ $(7z l -ba "${romzip}" | grep ".*.rar\|.*.zip") ]]; then
        "$LOCALDIR/extractor.sh" "$tmpdir"/zipfiles/"$file" "${outdir}"
     done
     exit
-elif [[ $(7z l -ba "${romzip}" | grep "UPDATE.APP") ]]; then
-    echo "Huawei UPDATE.APP detected"
-    7z x "${romzip}" UPDATE.APP
-    python3 "$splituapp" -f "UPDATE.APP" -l super preas preavs || (
-    for partition in $PARTITIONS; do
-        python3 "$splituapp" -f "UPDATE.APP" -l "${partition/.img/}" || echo "$partition not found in UPDATE.APP"
-    done)
-    if [ -f super.img ]; then
-        ($simg2img super.img super_* super.img.raw || mv super.img super.img.raw) 2>/dev/null
+elif 7z l -ba "${romzip}" | grep -q "UPDATE.APP"; then
+    echo "[INFO] Huawei 'UPDATE.APP' detected"
 
-        for partition in $PARTITIONS; do
-            ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
-            if [ -f "$partition"_a.img ]; then
-                mv "$partition"_a.img "$partition".img
-            else
-                foundpartitions=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "$partition".img)
-                7z e -y "${romzip}" "$foundpartitions" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
-            fi
-        done
-        rm -rf super.img.raw
-    fi
+    # Gather and extract 'UPDATE.APP' from archive
+    7z x "${romzip}" UPDATE.APP >> "$tmpdir"/zip.log
+    python "${update_extractor}" -e UPDATE.APP -o ${PWD} > /dev/null
+
+    # Change partition's name to lowercase
+    for f in $(find . -name '*.img'); do
+        mv ${f} ${f,,}
+    done
+
+    # Extract 'super.img' if present
+    [ -f super.img ] && 
+        echo "[INFO] Extracting 'super.img'..." \
+        superimage
 fi
 
 for partition in $PARTITIONS; do
