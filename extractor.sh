@@ -229,21 +229,50 @@ if [[ "${romzip}" == *.@(img|bin) ]] && [ "$(head -c6 "${romzip}")" == "RKFWf" ]
     exit 0
 fi
 
-if [[ $(7z l -ba "${romzip}" | grep -i aml) ]]; then
-    echo "aml detected"
-    cp "${romzip}" "$tmpdir"
-    romzip="$tmpdir/$(basename "${romzip}")"
-    7z e -y "${romzip}" >> "$tmpdir"/zip.log
-    $aml_extract $(find . -type f -name "*aml*.img")
+if 7z l -ba "${romzip}" | grep -q aml; then
+    echo "[INFO] Amlogic package detected"
+    cp "${romzip}" "${tmpdir}"
+
+    # Extract image(s) from archive
+    romzip="${tmpdir}/$(basename ${romzip})"
+    echo "[INFO] Extracting archive..."
+
+    # '7z' might not be able to extract '.tar.bz2' directly
+    if [[ "$(basename ${romzip})" == *".tar.bz2" ]]; then
+        tar -xvjf "${romzip}" > /dev/null || {
+            echo "[ERROR] Archive extraction ('.tar.bz2') failed!"
+            exit 1
+        }
+    else
+        7z e -y "${romzip}" >> "$tmpdir"/zip.log || {
+            echo "[ERROR] Archive extraction failed!"
+            exit 1
+        }
+    fi
+
+    # Extract through 'aml_extract'
+    echo "[IFNO] Extracting through 'aml-upgrade-package-extract'..."
+    $aml_extract $(find . -type f -name "*aml*.img") || {
+        echo "[INFO] Extraction failed!"
+        exit 1
+    }
+
+    # Replace partitions' extension to '.img'
     rename 's/.PARTITION$/.img/' *.PARTITION
     rename 's/_aml_dtb.img$/dtb.img/' *.img
     rename 's/_a.img/.img/' *.img
-    if [[ -f super.img ]]; then
+
+    # Generate a 'super.img'
+    [[ -f super.img ]] && \
         superimage
-    fi
-    for partition in $PARTITIONS; do
-        [[ -e "$tmpdir/$partition.img" ]] && mv "$tmpdir/$partition.img" "${outdir}/$partition.img"
+
+    # Move to output directory
+    for p in $PARTITIONS; do
+        [[ -e "$tmpdir/$p.img" ]] && \
+            mv "$tmpdir/$p.img" "${outdir}/$p.img"
     done
+
+    # Clean-up
     rm -rf "$tmpdir"
     exit 0
 fi
