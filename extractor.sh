@@ -603,9 +603,10 @@ elif 7z l -ba "${romzip}" | grep -q "UPDATE.APP"; then
     done
 
     # Extract 'super.img' if present
-    [ -f super.img ] && 
-        echo "[INFO] Extracting 'super.img'..." \
+    if [ -f super.img ]; then
+        echo "[INFO] Extracting 'super.img'..."
         superimage
+    fi
 fi
 
 for partition in $PARTITIONS; do
