@@ -438,15 +438,21 @@ elif [[ $(7z l -ba "${romzip}" | grep "system.sin\|.*system_.*\.sin") ]]; then
         echo "super image inside a sin detected"
         superimage
     fi
-elif [[ $(7z l -ba "${romzip}" | grep ".pac$") ]]; then
-    echo "pac detected"
-    7z x -y "${mzip}" 2>/dev/null >> "$tmpdir"/zip.log
-    find "$tmpdir"/ -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
-    pac_list=$(find "$tmpdir"/ -type f -name "*.pac" -printf '%P\n' | sort)
-    for file in $pac_list; do
-        python3 "$pacextractor" "$file" "$PWD"
+elif 7z l -ba "${romzip}" | grep -q ".pac$"; then
+    echo "[INFO] Unisoc package detected"
+
+    # Extract '.pac' to our directory, and sanitize image(s)
+    7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
+    find "${tmpdir}" -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
+
+    # Extract (all) found '.pac' package(s) 
+    pac=$(find "$tmpdir"/ -type f -name "*.pac" -printf '%P\n' | sort)
+    for f in ${pac}; do
+        python3 "${pacextractor}" "${f}" "${PWD}"
     done
-    if [[ -f super.img ]]; then
+
+    if [ -f super.img ]; then
+        echo "[INFO] Extracting 'super.img'..."
         superimage
     fi
 elif [[ $(7z l -ba "${romzip}" | grep "system.bin") ]]; then
