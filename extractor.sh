@@ -293,7 +293,7 @@ for partition in ${OTHERPARTITIONS}; do
     OUT=$(echo "$partition" | cut -f 2 -d ":")
 
     # Check if partition is present on archive
-    if $(7z l -ba "${romzip}" | grep -q "$IN"); then
+    if [ $(7z l -ba "${romzip}" | grep -q "$IN") ] && [ ! $(7z l -na ${romzip} | grep -q "rawprogram") ]; then
         echo "[INFO] Extracting ${IN}..."
 
         # Extract to '${outdir}'
