@@ -340,24 +340,37 @@ if [[ $(7z l -ba "${romzip}" | grep system.new.dat) ]]; then
         done
     done
 elif [[ $(7z l -ba "${romzip}" | grep rawprogram) ]]; then
-    echo "QFIL detected"
-    rawprograms=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep rawprogram)
-    7z e -y "${romzip}" "$rawprograms" 2>/dev/null >> "$tmpdir"/zip.log
-    for partition in $PARTITIONS; do
-        partitionsonzip=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "$partition")
-        if [[ ! $partitionsonzip == "" ]]; then
-            7z e -y "${romzip}" "$partitionsonzip" 2>/dev/null >> "$tmpdir"/zip.log
-            if [[ ! -f "$partition.img" ]]; then
-                if [[ -f "$partition.raw.img" ]]; then
-                    mv "$partition.raw.img" "$partition.img"
-                else
-                    rawprogramsfile=$(grep -rlw "$partition" rawprogram*.xml)
-                    $packsparseimg -t "$partition" -x "$rawprogramsfile" > "$tmpdir"/extract.log
-                    mv "$partition.raw" "$partition.img"
-                fi
+    echo "[INFO] QFIL package detected"
+
+    # Start extraction on '${PWD}/out/tmp'
+    echo "[INFO] Extracing archive..."
+    7z e -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log || {
+        echo "[ERROR] Archive extraction failed"
+        exit 1
+    }
+
+    for p in ${PARTITIONS}; do
+        # Rename RAW images into normal images
+        if [[ -f "$p.raw.img" ]]; then
+            mv "$p.raw.img" "$p.img"
+        else
+            # There might be 'rawprogram_unsparse0.xml', which is preferred
+            if [ -f "${PWD}/rawprogram_unsparse0.xml" ]; then
+                RAWPROGRAM="${PWD}/rawprogram_unsparse0.xml"
+            else
+                RAWPRGORAM="$(grep -rlw "${p}" rawprogram*.xml)"
+            fi
+
+            # Extract (existing) images via 'packsparseimg'
+            if ls "${PWD}" | grep -q "${p}"; then
+                echo "[INFO] Extracting '${p}' with 'packsparseimg'..."
+                "${packsparseimg}" -t "${p}" -x "${RAWPROGRAM}" > "$tmpdir"/extract.log
+                mv "${p}.raw" "${p}.img"
             fi
         fi
     done
+
+    # Execute in case we have a 'super.img'
     if [[ -f super.img ]]; then
         superimage
     fi
