@@ -493,7 +493,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q system-sign.img; then
         SIGN=$(echo ${p}-sign.img)
         7z x -y "${romzip}" ${SIGN} 2>/dev/null >> "$tmpdir"/zip.log ||  {
                 echo "[ERROR] Failed to extract '${f}'"
-                exit 0
+                exit 1
             }
     done
 
@@ -518,7 +518,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q system-sign.img; then
             offset=$((0x${offset:4:4} * 65536 + 0x${offset:0:4}))
             dd if="${tmpdir}/${f}" of="${tmpdir}/${f}.tmp" iflag=count_bytes,skip_bytes bs=8192 skip=64 count=${offset} > /dev/null 2>&1 || {
                 echo "[ERROR] Failed to clean '${f}'"
-                exit 0
+                exit 1
             }
         else 
             echo "[INFO] Cleaning '${f}' with other header..."
@@ -526,7 +526,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q system-sign.img; then
             # Header has BFBF magic or other
             dd if="${tmpdir}/${f}" of="${tmpdir}/${f}.tmp" bs=$((0x4040)) skip=1 > /dev/null 2>&1 ||  {
                 echo "[ERROR] Failed to clean '${f}'"
-                exit 0
+                exit 1
             }
         fi
 
@@ -535,7 +535,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q system-sign.img; then
         if [[ $MAGIC == "ed26ff3a" ]]; then
             "${simg2img}" "${tmpdir}/${f}.tmp" "${tmpdir}/${f}" > /dev/null 2>&1 ||  {
                 echo "[ERROR] Failed to unsparse '${f}'"
-                exit 0
+                exit 1
             }
         else
             mv "${tmpdir}/${f}.tmp" "$tmpdir/${f}"
