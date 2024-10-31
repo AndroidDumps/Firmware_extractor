@@ -24,23 +24,34 @@
 
 shopt -s extglob
 
+# superimage: Extract images from 'super.img.raw'
 superimage() {
+    # Create a RAW image from a sparsed one
     if [ -f super.img ]; then
-        echo "Creating super.img.raw ..."
-        $simg2img super.img super.img.raw 2>/dev/null
+        echo "[INFO] Creating 'super.img.raw'..."
+        "${simg2img}" "${PWD}/super.img" "${PWD}/super.img.raw" 2>/dev/null
     fi
+
+    # Image is probably already a RAW
     if [[ ! -s super.img.raw ]] && [ -f super.img ]; then
-        mv super.img super.img.raw
+        mv "${PWD}/super.img" "${PWD}/super.img.raw"
     fi
-    for partition in $PARTITIONS; do
-        ($lpunpack --partition="$partition"_a super.img.raw || $lpunpack --partition="$partition" super.img.raw) 2>/dev/null
-        if [ -f "$partition"_a.img ]; then
-            mv "$partition"_a.img "$partition".img
-        elif [ -f "$romzip" ]; then
-            foundpartitions=$(7z l -ba "${romzip}" | rev | gawk '{ print $1 }' | rev | grep "$partition".img)
-            7z e -y "${romzip}" "$foundpartitions" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
+
+    for p in ${PARTITIONS}; do
+        # Extract partitions from 'super.img.raw'
+        "${lpunpack}" --partition="${p}"_a "${PWD}/super.img.raw" 2>/dev/null || \
+            "${lpunpack}" --partition="${p}" "${PWD}/super.img.raw" 2>/dev/null && echo "[INFO] Extracted '${p}_a.img'"
+
+        if [ -f "${p}"_a.img ]; then
+            # Remove partition slot suffix
+            mv "${p}"_a.img "${p}".img
+        elif [ -f "${romzip}" ]; then
+            FOUND_PARTITIONS=$(7z l -ba "${romzip}" | rev | gawk '{ print $1 }' | rev | grep "${p}".img)
+            7z e -y "${romzip}" "${FOUND_PARTITIONS}" 2>/dev/null >> "$tmpdir"/zip.log
         fi
     done
+
+    # Clean-up
     rm -rf super.img*
 }
 
