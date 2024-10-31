@@ -355,7 +355,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q qrawprogram; then
             if [ -f "${PWD}/rawprogram_unsparse0.xml" ]; then
                 RAWPROGRAM="${PWD}/rawprogram_unsparse0.xml"
             else
-                RAWPRGORAM="$(grep -rlw "${p}" rawprogram*.xml)"
+                RAWPROGRAM="$(grep -rlw "${p}" rawprogram*.xml)"
             fi
 
             # Extract (existing) images via 'packsparseimg'
@@ -480,7 +480,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system-p"; then
         foundpartitions=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "$partition"-p)
         7z e -y "${romzip}" "$foundpartitions" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
         if [ -n "$foundpartitions" ]; then
-            mv $(ls "$partition"-p*) "$partition.img"
+            mv "$(ls "$partition"-p*)" "$partition.img"
         fi
     done
 elif 7z l -ba "${romzip}" 2>/dev/null | grep -q system-sign.img; then
