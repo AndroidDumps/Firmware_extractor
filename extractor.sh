@@ -462,7 +462,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q ".pac$" || echo "${romzip}" | gr
 
     # Extract (all) found '.pac' package(s) 
     PAC=$(find "$tmpdir"/ -type f -name "*.pac" -printf '%P\n' | sort)
-    for f in ${PAC}; do python3 "${pacextractor}" "${f}" "${PWD}"; done
+    for f in ${PAC}; do python3 "${pacextractor}" "${f}" "${PWD}" > /dev/null; done
 
     if [ -f super.img ]; then
         echo "[INFO] Extracting 'super.img'..."
