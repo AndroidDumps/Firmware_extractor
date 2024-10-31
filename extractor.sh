@@ -443,7 +443,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system.sin\|.*system_.*\.sin"; 
     find "$tmpdir" -maxdepth 1 -type f -name "*.ext4" | rename 's/.ext4/.img/g' > /dev/null 2>&1 # proper names
 
     foundsuperinsin=$(find "$tmpdir" -maxdepth 1 -type f -name "super_*.img")
-    if [ ! -z "$foundsuperinsin" ]; then
+    if [ -n "$foundsuperinsin" ]; then
         mv $(ls "$tmpdir"/super_*.img) "$tmpdir/super.img"
         echo "super image inside a sin detected"
         superimage
@@ -479,7 +479,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system-p"; then
     for partition in $PARTITIONS; do
         foundpartitions=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "$partition"-p)
         7z e -y "${romzip}" "$foundpartitions" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
-        if [ ! -z "$foundpartitions" ]; then
+        if [ -n "$foundpartitions" ]; then
             mv $(ls "$partition"-p*) "$partition.img"
         fi
     done
