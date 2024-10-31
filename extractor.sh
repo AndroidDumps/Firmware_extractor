@@ -257,7 +257,7 @@ if 7z l -ba "${romzip}" 2>/dev/null | grep -q aml; then
 
     # Extract through 'aml_extract'
     echo "[IFNO] Extracting through 'aml-upgrade-package-extract'..."
-    $aml_extract $(find . -type f -name "*aml*.img") || {
+    $aml_extract "$(find . -type f -name "*aml*.img")" || {
         echo "[INFO] Extraction failed!"
         exit 1
     }
@@ -391,7 +391,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep system | grep chunk | grep -qv ".*\
         rm -f *"$partition"_other*
         romchunk=$(ls | grep chunk | grep "$partition" | sort)
         if echo "$romchunk" | grep -q "sparsechunk"; then
-            $simg2img $(echo "$romchunk" | tr '\n' ' ') "$partition".img.raw 2>/dev/null
+            $simg2img "$(echo "$romchunk" | tr '\n' ' ')" "$partition".img.raw 2>/dev/null
             rm -rf *"$partition"*chunk*
             if [[ -f $partition.img ]]; then
                 rm -rf "$partition".img.raw
@@ -406,7 +406,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep "super.img"; then
     7z e -y "${romzip}" "$foundsupers" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
     superchunk=$(ls | grep chunk | grep super | sort)
     if echo "$superchunk" | grep -q "sparsechunk"; then
-        $simg2img $(echo "$superchunk" | tr '\n' ' ') super.img.raw 2>/dev/null
+        $simg2img "$(echo "$superchunk" | tr '\n' ' ')" super.img.raw 2>/dev/null
         rm -rf *super*chunk*
     fi
     superimage
@@ -444,7 +444,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system.sin\|.*system_.*\.sin"; 
 
     foundsuperinsin=$(find "$tmpdir" -maxdepth 1 -type f -name "super_*.img")
     if [ -n "$foundsuperinsin" ]; then
-        mv $(ls "$tmpdir"/super_*.img) "$tmpdir/super.img"
+        mv "$(ls "$tmpdir"/super_*.img)" "$tmpdir/super.img"
         echo "super image inside a sin detected"
         superimage
     fi
