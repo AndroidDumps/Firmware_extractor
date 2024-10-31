@@ -239,11 +239,11 @@ if 7z l -ba "${romzip}" 2>/dev/null | grep -q aml; then
     cp "${romzip}" "${tmpdir}"
 
     # Extract image(s) from archive
-    romzip="${tmpdir}/$(basename ${romzip})"
+    romzip="${tmpdir}/$(basename "${romzip}")"
     echo "[INFO] Extracting archive..."
 
     # '7z' might not be able to extract '.tar.bz2' directly
-    if [[ "$(basename ${romzip})" == *".tar.bz2" ]]; then
+    if [[ "$(basename "${romzip}")" == *".tar.bz2" ]]; then
         tar -xvjf "${romzip}" > /dev/null || {
             echo "[ERROR] Archive extraction ('.tar.bz2') failed!"
             exit 1
@@ -289,7 +289,7 @@ for partition in ${OTHERPARTITIONS}; do
     OUT=$(echo "$partition" | cut -f 2 -d ":")
 
     # Check if partition is present on archive
-    if 7z l -ba "${romzip}" 2>/dev/null | grep -q "$IN" > /dev/null && 7z l -na ${romzip} 2>/dev/null | grep -q "rawprogram"; then
+    if 7z l -ba "${romzip}" 2>/dev/null | grep -q "$IN" > /dev/null && 7z l -na "${romzip}" 2>/dev/null | grep -q "rawprogram"; then
         echo "[INFO] Extracting ${IN}..."
 
         # Extract to '${outdir}'
@@ -490,8 +490,8 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q system-sign.img; then
     echo "[INFO] Extracting archive with images..."
 
     for p in ${PARTITIONS}; do
-        SIGN=$(echo ${p}-sign.img)
-        7z x -y "${romzip}" ${SIGN} 2>/dev/null >> "$tmpdir"/zip.log ||  {
+        SIGN=$(echo "${p}"-sign.img)
+        7z x -y "${romzip}" "${SIGN}" 2>/dev/null >> "$tmpdir"/zip.log ||  {
                 echo "[ERROR] Failed to extract '${f}'"
                 exit 1
             }
@@ -614,11 +614,11 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "UPDATE.APP"; then
 
     # Gather and extract 'UPDATE.APP' from archive
     7z x "${romzip}" UPDATE.APP >> "$tmpdir"/zip.log
-    python "${update_extractor}" -e UPDATE.APP -o ${PWD} > /dev/null
+    python "${update_extractor}" -e UPDATE.APP -o "${PWD}" > /dev/null
 
     # Change partition's name to lowercase
     for f in $(find . -name '*.img'); do
-        mv ${f} ${f,,}
+        mv "${f}" "${f,,}"
     done
 
     # Extract 'super.img' if present
@@ -686,7 +686,7 @@ if 7z l -ba "${romzip}" 2>/dev/null | grep -q radio.img; then
     fi
 fi
 
-if [[ $(ls -A ${outdir} | wc -l ) -eq 1 ]]; then
+if [[ $(ls -A "${outdir}" | wc -l ) -eq 1 ]]; then
     echo "[FAILED] '${outdir}' is empty.
          Are you sure your archive is supported?"
 fi
