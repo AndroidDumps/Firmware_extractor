@@ -394,21 +394,21 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q rawprogram; then
     }
 
     for p in ${PARTITIONS}; do
+        # There might be 'rawprogram_unsparse0.xml', which is preferred
+        if [ -f "${PWD}/rawprogram_unsparse0.xml" ]; then
+            RAWPROGRAM="${PWD}/rawprogram_unsparse0.xml"
+        else
+            RAWPROGRAM="$(grep -rlw "${p}" rawprogram*.xml)"
+        fi
+
         # Rename RAW images into normal images
         if [[ -f "$p.raw.img" ]]; then
             mv "$p.raw.img" "$p.img"
         else
-            # There might be 'rawprogram_unsparse0.xml', which is preferred
-            if [ -f "${PWD}/rawprogram_unsparse0.xml" ]; then
-                RAWPROGRAM="${PWD}/rawprogram_unsparse0.xml"
-            else
-                RAWPROGRAM="$(grep -rlw "${p}" rawprogram*.xml)"
-            fi
-
             # Extract (existing) images via 'packsparseimg'
             if ls "${PWD}" | grep -q "${p}"; then
-                echo "[INFO] Extracting '${p}.img' with 'packsparseimg'..."
-                "${packsparseimg}" -t "${p}" -x "${RAWPROGRAM}" 2> /dev/null || echo "[WARNING] '${p}.img' extraction failed."
+                echo "[INFO] Trying to extract '${p}.img' with 'packsparseimg'..."
+                "${packsparseimg}" -t "${p}" -x "${RAWPROGRAM}" >> /dev/null 2>&1
                 mv "${p}.raw" "${p}.img" 2>/dev/null
             fi
         fi
