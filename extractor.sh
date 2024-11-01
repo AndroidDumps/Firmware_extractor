@@ -21,6 +21,8 @@
 # RUU
 # Amlogic upgrade package
 # Rockchip upgrade package
+# super.img
+# payload.bin
 
 shopt -s extglob
 
@@ -53,6 +55,40 @@ superimage() {
 
     # Clean-up
     rm -rf super.img*
+}
+
+# payload: Extract 'payload.bin'
+payload() {
+    echo "[INFO] A/B package detected"
+
+    # Extract content to our directory
+    echo "[INFO] Extracting 'payload.bin' partitions..."
+    ${otadump} --list "${romzip}"
+    ${otadump} -o "${tmpdir}" "${romzip}" 2>/dev/null ||
+        echo "[ERROR] Failed extracting partitions."
+}
+
+# unisoc: Extract '.pac' packages
+unisoc() {
+    echo "[INFO] Unisoc package detected"
+
+    # Extract '.pac' to our directory, and sanitize image(s)
+    if echo "${romzip}" | grep -q ".pac$"; then
+        cp "${romzip}" "${tmpdir}"
+        find "${tmpdir}" -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
+    else
+        7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
+        find "${tmpdir}" -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
+    fi
+
+    # Extract (all) found '.pac' package(s) 
+    PAC=$(find "$tmpdir"/ -type f -name "*.pac" -printf '%P\n' | sort)
+    for f in ${PAC}; do python3 "${pacextractor}" "${f}" "${PWD}" > /dev/null; done
+
+    if [ -f super.img ]; then
+        echo "[INFO] Extracting 'super.img'..."
+        superimage
+    fi
 }
 
 usage() {
@@ -125,6 +161,17 @@ mkdir -p "${tmpdir}" "${outdir}"
 
 # Change directory to working folder
 cd "${tmpdir}" || exit
+
+# Simple images support
+if echo "${romzip}" | grep -q super.img; then
+    echo "[INFO] Copying 'super.img' to working directory..."
+    cp "${romzip}" "${tmpdir}"
+    superimage
+elif echo "${romzip}" | grep -q payload.bin; then
+    payload
+elif echo "${romzip}" | grep -q ".pac$"; then
+    unisoc
+fi
 
 MAGIC=$(head -c12 "${romzip}" | tr -d '\0')
 
@@ -459,26 +506,8 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system.sin\|.*system_.*\.sin"; 
         echo "super image inside a sin detected"
         superimage
     fi
-elif 7z l -ba "${romzip}" 2>/dev/null | grep -q ".pac$" || echo "${romzip}" | grep -q ".pac$"; then
-    echo "[INFO] Unisoc package detected"
-
-    # Extract '.pac' to our directory, and sanitize image(s)
-    if echo "${romzip}" | grep -q ".pac$"; then
-        cp "${romzip}" "${tmpdir}"
-        find "${tmpdir}" -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
-    else
-        7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
-        find "${tmpdir}" -name "* *" -type d,f | rename 's/ /_/g' > /dev/null 2>&1
-    fi
-
-    # Extract (all) found '.pac' package(s) 
-    PAC=$(find "$tmpdir"/ -type f -name "*.pac" -printf '%P\n' | sort)
-    for f in ${PAC}; do python3 "${pacextractor}" "${f}" "${PWD}" > /dev/null; done
-
-    if [ -f super.img ]; then
-        echo "[INFO] Extracting 'super.img'..."
-        superimage
-    fi
+elif 7z l -ba "${romzip}" 2>/dev/null | grep -q ".pac$"; then
+    unisoc
 elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system.bin"; then
     echo "bin images detected"
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
@@ -592,24 +621,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q ./"*.tar"; then
     "${LOCALDIR}/extractor.sh" "${TAR}" "${outdir}"
     exit
 elif 7z l -ba "${romzip}" 2>/dev/null | grep -q payload.bin; then
-    echo "[INFO] A/B package detected"
-
-    # Extract content to our directory
-    echo "[INFO] Extracting 'payload.bin' partitions..."
-    ${otadump} --list "${romzip}"
-    ${otadump} -o "${tmpdir}" "${romzip}" 2>/dev/null ||
-        echo "[ERROR] Failed extracting partitions."
-
-    for p in ${PARTITIONS}; do
-        [[ -e "${tmpdir}/${p}.img" ]] && \
-            mv "${tmpdir}/${p}.img" "${outdir}/${p}.img"
-    done
-
-    # Remove temporary files
-    [[ -f "payload.bin" ]] && rm "${PWD}/payload.bin"
-    rm -rf "$tmpdir"
-
-    exit
+    payload
 elif 7z l -ba "${romzip}" 2>/dev/null | grep -q ".*.rar\|.*.zip"; then
     echo "Image zip firmware detected"
     mkdir -p "$tmpdir"/zipfiles

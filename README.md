@@ -36,7 +36,9 @@ Usage: ./extractor.sh {firmware.zip} [firmware/]
 ## Supported firmware(s)
  * A-only over-the-air update packages
  * A/B over-the-air update packages
+    - Un-zipped packages (plain `payload.bin`)
  * RAW image(s)
+     - Un-zipped packages (plain `super.img`)
  * Samsung's archives (`.tar.md5`)
  * Chunk image(s)
  * QFIL packages
@@ -47,6 +49,7 @@ Usage: ./extractor.sh {firmware.zip} [firmware/]
  * KDDI's `.bin`
  * Archive as binary (`.bin`)
  * Unisoc's upgrade packages (`.pac`)
+     - Un-zipped packages (plain `[...].pac`)
  * sign, along with *auth DA*, images (`[...]-sign.img`)
  * Nokia's upgrade packages (`.nb0`)
  * LG's update packages (`.kdz`)
