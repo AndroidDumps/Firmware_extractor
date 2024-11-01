@@ -254,7 +254,7 @@ if echo "${romzip}" | grep -i ruu_ | grep -qi exe; then
     exit 0
 fi
 
-if [[ "${romzip}" == *.@(img|bin) ]] && [ "$(head -c6 "${romzip}")" == "RKFWf" ]; then
+if [[ "${romzip}" == *.@(img|bin) ]] && [ "$(head -c6 "${romzip}" | tr '\0' '\n')" == "RKFWf" ]; then
     echo "[INFO] Detected rockchip archive"
 
     # Start the extraction of partition
@@ -458,7 +458,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep system | grep chunk | grep -qv ".*\
             fi
         fi
     done
-elif 7z l -ba "${romzip}" 2>/dev/null | grep "super.img"; then
+elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "super.img"; then
     echo "super detected"
     foundsupers=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "super.img")
     7z e -y "${romzip}" "$foundsupers" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
