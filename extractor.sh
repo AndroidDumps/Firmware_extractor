@@ -394,7 +394,7 @@ if 7z l -ba "${romzip}" 2>/dev/null | grep -q system.new.dat; then
             rm -rf "$line".transfer.list "$line".new.dat
         done
     done
-elif 7z l -ba "${romzip}" 2>/dev/null | grep -q qrawprogram; then
+elif 7z l -ba "${romzip}" 2>/dev/null | grep -q rawprogram; then
     echo "[INFO] QFIL package detected"
 
     # Start extraction on '${PWD}/out/tmp'
@@ -418,9 +418,9 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q qrawprogram; then
 
             # Extract (existing) images via 'packsparseimg'
             if ls "${PWD}" | grep -q "${p}"; then
-                echo "[INFO] Extracting '${p}' with 'packsparseimg'..."
-                "${packsparseimg}" -t "${p}" -x "${RAWPROGRAM}" > "$tmpdir"/extract.log
-                mv "${p}.raw" "${p}.img"
+                echo "[INFO] Extracting '${p}.img' with 'packsparseimg'..."
+                "${packsparseimg}" -t "${p}" -x "${RAWPROGRAM}" 2> /dev/null || echo "[WARNING] '${p}.img' extraction failed."
+                mv "${p}.raw" "${p}.img" 2>/dev/null
             fi
         fi
     done
@@ -611,7 +611,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep tar.md5 | gawk '{ print $NF }' | gr
         exit 1
     fi
     romzip=""
-elif 7z l -ba "${romzip}" 2>/dev/null | grep -q ./"*.tar"; then
+elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "*.tar"; then
     echo "[INFO] Non-AP tar detected"
 
     # Extract '.tar' content
