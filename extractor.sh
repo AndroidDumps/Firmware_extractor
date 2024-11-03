@@ -701,6 +701,7 @@ fi
 if [[ $(ls -A "${outdir}" | wc -l ) -eq 1 ]]; then
     echo "[FAILED] '${outdir}' is empty.
          Are you sure your archive is supported?"
+    exit 1
 fi
 
 cd "$LOCALDIR" || exit
