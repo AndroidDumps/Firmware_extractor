@@ -281,7 +281,7 @@ if [[ "${romzip}" == *.@(img|bin) ]] && [ "$(head -c6 "${romzip}" | tr '\0' '\n'
     exit 0
 fi
 
-if 7z l -ba "${romzip}" 2>/dev/null | grep -q aml; then
+if 7z l -ba "${romzip}" 2>/dev/null | grep -q aml*.img; then
     echo "[INFO] Amlogic package detected"
     cp "${romzip}" "${tmpdir}"
 
