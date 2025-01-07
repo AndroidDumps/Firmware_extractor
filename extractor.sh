@@ -497,6 +497,16 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system.sin\|.*system_.*\.sin"; 
     fi
 elif 7z l -ba "${romzip}" 2>/dev/null | grep -q ".pac$"; then
     unisoc
+elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system/*"; then
+    echo "[INFO] 'system/' directory detected"
+    7z x -y "${romzip}" 2>/dev/null >> "${tmpdir}"/zip.log
+
+    # Archive the content of the directory and "spoof" it as an image
+    cd "${tmpdir}/system" || exit
+    7z a "system.zip" -- * >> "${tmpdir}"/zip.log
+
+    # Move back to 'tmpdir'
+    mv system.zip ${tmpdir}/system.img && cd ${tmpdir} 
 elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "*system.bin*"; then
     echo "bin images detected"
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
