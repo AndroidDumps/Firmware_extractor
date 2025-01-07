@@ -497,7 +497,7 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system.sin\|.*system_.*\.sin"; 
     fi
 elif 7z l -ba "${romzip}" 2>/dev/null | grep -q ".pac$"; then
     unisoc
-elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "system.bin"; then
+elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "*system.bin*"; then
     echo "bin images detected"
     7z x -y "${romzip}" 2>/dev/null >> "$tmpdir"/zip.log
     find "$tmpdir"/ -mindepth 2 -type f -name "*.bin" -exec mv {} . \; # move .img in sub-dir to $tmpdir
