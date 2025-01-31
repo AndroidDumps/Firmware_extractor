@@ -448,14 +448,18 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep system | grep chunk | grep -qv ".*\
         fi
     done
 elif 7z l -ba "${romzip}" 2>/dev/null | grep -q "super.img"; then
-    echo "super detected"
-    foundsupers=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "super.img")
-    7z e -y "${romzip}" "$foundsupers" dummypartition 2>/dev/null >> "$tmpdir"/zip.log
-    superchunk=$(ls | grep chunk | grep super | sort)
-    if echo "$superchunk" | grep -q "sparsechunk"; then
-        $simg2img "$(echo "$superchunk" | tr '\n' ' ')" super.img.raw 2>/dev/null
-        rm -rf *super*chunk*
+    echo "[INFO] 'super.img' detected"
+
+    # Extract detected image(s)    
+    FOUND=$(7z l -ba "${romzip}" | gawk '{ print $NF }' | grep "super.img" | tr '\n' ' ')
+    7z x -y "${romzip}" ${FOUND} >> "$tmpdir"/zip.log
+
+    # If image is a 'super.img_sparsechunk', convert via 'simg2img'
+    if echo "${FOUND}" | grep -q "sparsechunk"; then
+        ${simg2img} ${FOUND} "${PWD}/super.img.raw" 2>/dev/null
     fi
+
+    # Run 'superimage' function over the 'super.img'
     superimage
 elif 7z l -ba "${romzip}" 2>/dev/null | gawk '{print $NF}' | grep "system_new.img\|^system.img\|\/system.img\|\/system_image.emmc.img\|^system_image.emmc.img"; then
     echo "Image detected"
