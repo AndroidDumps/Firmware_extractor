@@ -302,7 +302,7 @@ if 7z l -ba "${romzip}" 2>/dev/null | gawk '{ print $NF }' | grep -qE '(^|/)aml[
     fi
 
     # Extract through 'aml_extract'
-    echo "[IFNO] Extracting through 'aml-upgrade-package-extract'..."
+    echo "[INFO] Extracting through 'aml-upgrade-package-extract'..."
     $aml_extract "$(find . -type f -name "*aml*.img")" || {
         echo "[INFO] Extraction failed!"
         exit 1
