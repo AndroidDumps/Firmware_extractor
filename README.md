@@ -22,7 +22,7 @@ Beforehand, make sure you're gonna to extract an archive we support. You can che
 
 ```
 $ cd Firmware_extractor
-$ wget https://dl.google.com/dl/android/aosp/walleye-pq3a.190705.001-factory-cc471c8c.zip -o firmware.zip
+$ wget https://dl.google.com/dl/android/aosp/walleye-pq3a.190705.001-factory-cc471c8c.zip -O firmware.zip
 $ ./extractor.sh firmware.zip walleye/
 ```
 
