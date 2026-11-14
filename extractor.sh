@@ -403,12 +403,14 @@ elif 7z l -ba "${romzip}" 2>/dev/null | grep -q rawprogram; then
         # Rename RAW images into normal images
         if [[ -f "$p.raw.img" ]]; then
             mv "$p.raw.img" "$p.img"
-        else
-            # Extract (existing) images via 'packsparseimg'
+        elif [[ ! -f "$p.img" ]]; then
+            # Extract (existing) images via 'packsparseimg', unless already extracted
             if ls "${PWD}" | grep -q "${p}"; then
                 echo "[INFO] Trying to extract '${p}.img' with 'packsparseimg'..."
                 "${packsparseimg}" -t "${p}" -x "${RAWPROGRAM}" >> /dev/null 2>&1
-                mv "${p}.raw" "${p}.img" 2>/dev/null
+                # 'packsparseimg' leaves a 0-byte '.raw' when it fails, so only
+                # move it if extraction actually produced something
+                [[ -s "${p}.raw" ]] && mv "${p}.raw" "${p}.img"
             fi
         fi
     done
@@ -701,11 +703,13 @@ if 7z l -ba "${romzip}" 2>/dev/null | grep -q radio.img; then
     fi
 fi
 
-if [[ $(ls -A "${outdir}" | wc -l ) -eq 1 ]]; then
+cd "$LOCALDIR" || exit
+rm -rf "$tmpdir"
+
+# Fail loudly if nothing was extracted. Checking for actual files (rather than
+# counting entries) also works when a custom output directory is used.
+if [[ -z "$(find "${outdir}" -type f -print -quit 2>/dev/null)" ]]; then
     echo "[FAILED] '${outdir}' is empty.
          Are you sure your archive is supported?"
     exit 1
 fi
-
-cd "$LOCALDIR" || exit
-rm -rf "$tmpdir"
